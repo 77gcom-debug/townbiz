@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend,
+  ResponsiveContainer, Legend, ReferenceLine,
 } from 'recharts';
 import { ALL_REGION_DATA, REGIONS, getYouthPop, getElderlyPop } from '@/lib/allRegions';
 import { POPULATION_DATA } from '@/lib/data';
@@ -39,9 +39,10 @@ function CustomTooltip({ active, payload, label, unit }: any) {
 
 interface Props {
   selectedDongs: string[];
+  activeYear?: number;
 }
 
-export default function DongCompareChart({ selectedDongs }: Props) {
+export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
   // 차트 데이터 구성
   const chartData = YEARS.map(year => {
     const row: Record<string, any> = { year };
@@ -100,6 +101,15 @@ export default function DongCompareChart({ selectedDongs }: Props) {
                     tickFormatter={m.fmt}
                   />
                   <Tooltip content={<CustomTooltip unit={m.unit} />} />
+                  {activeYear && (
+                    <ReferenceLine
+                      x={activeYear}
+                      stroke="rgba(255,255,255,0.5)"
+                      strokeDasharray="4 3"
+                      strokeWidth={1.5}
+                      label={{ value: `${activeYear}년`, position: 'top', fill: 'rgba(255,255,255,0.6)', fontSize: 9 }}
+                    />
+                  )}
                   {dongLabels.map((label, i) => (
                     <Line
                       key={label}

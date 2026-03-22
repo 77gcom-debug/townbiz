@@ -171,15 +171,13 @@ export default function Dashboard() {
             }
           />
 
-          {/* 타임라인 슬라이더 - 인구현황 탭만 */}
-          {activeTab === 'population' && (
-            <TimelineSlider
-              activeYear={activeYear}
-              isPlaying={isPlaying}
-              onYearChange={setActiveYear}
-              onTogglePlay={handleTogglePlay}
-            />
-          )}
+          {/* 타임라인 슬라이더 - 공통 */}
+          <TimelineSlider
+            activeYear={activeYear}
+            isPlaying={isPlaying}
+            onYearChange={setActiveYear}
+            onTogglePlay={handleTogglePlay}
+          />
         </div>
       </div>
 
@@ -336,7 +334,7 @@ export default function Dashboard() {
         {/* ══ 동별 비교 탭 ══ */}
         {activeTab === 'dongCompare' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <DongCompareChart selectedDongs={multiKeys} />
+            <DongCompareChart selectedDongs={multiKeys} activeYear={activeYear} />
           </motion.div>
         )}
 
