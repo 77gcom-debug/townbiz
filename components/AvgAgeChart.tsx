@@ -11,10 +11,11 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { POPULATION_DATA } from '@/lib/data';
+import { POPULATION_DATA, YearData } from '@/lib/data';
 
 interface Props {
   activeYear: number;
+  data?: YearData[];
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -34,8 +35,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-export default function AvgAgeChart({ activeYear }: Props) {
-  const visibleData = POPULATION_DATA.filter((d) => d.year <= activeYear).map((d, i, arr) => ({
+export default function AvgAgeChart({ activeYear, data }: Props) {
+  const sourceData = (data ?? POPULATION_DATA).filter(d => d.total > 0 && d.avgAge > 0);
+  const visibleData = sourceData.filter((d) => d.year <= activeYear).map((d, i, arr) => ({
     year: d.year,
     avgAge: d.avgAge,
     diff: i === 0 ? null : parseFloat((d.avgAge - arr[i - 1].avgAge).toFixed(2)),
@@ -53,7 +55,7 @@ export default function AvgAgeChart({ activeYear }: Props) {
         />
         <YAxis
           yAxisId="age"
-          domain={[33, 49]}
+          domain={['auto', 'auto']}
           tickFormatter={(v) => `${v}세`}
           tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }}
           axisLine={false}

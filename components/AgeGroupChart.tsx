@@ -10,10 +10,11 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { POPULATION_DATA, AGE_GROUPS, AGE_COLORS, AgeGroup } from '@/lib/data';
+import { POPULATION_DATA, AGE_GROUPS, AGE_COLORS, AgeGroup, YearData } from '@/lib/data';
 
 interface Props {
   activeYear: number;
+  data?: YearData[];
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -42,8 +43,9 @@ const CustomLegend = () => (
   </div>
 );
 
-export default function AgeGroupChart({ activeYear }: Props) {
-  const visibleData = POPULATION_DATA.filter((d) => d.year <= activeYear).map((d) => ({
+export default function AgeGroupChart({ activeYear, data }: Props) {
+  const sourceData = (data ?? POPULATION_DATA).filter(d => d.total > 0);
+  const visibleData = sourceData.filter((d) => d.year <= activeYear).map((d) => ({
     year: d.year,
     ...d.ages,
   }));

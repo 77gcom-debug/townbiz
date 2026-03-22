@@ -14,27 +14,34 @@ import { POPULATION_DATA, YearData } from '@/lib/data';
 
 interface Props {
   activeYear: number;
+  data?: YearData[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, base }: any) => {
   if (!active || !payload?.length) return null;
   const d: YearData = payload[0].payload;
-  const base = POPULATION_DATA[0].total;
   const diff = d.total - base;
-  const rate = ((d.total / base) - 1) * 100;
+  const rate = base > 0 ? ((d.total / base) - 1) * 100 : 0;
   return (
     <div className="bg-gray-900 border border-white/20 rounded-xl px-4 py-3 shadow-2xl text-sm">
       <p className="font-bold text-white text-base mb-2">{label}년</p>
       <p className="text-blue-300">총인구: <span className="text-white font-semibold">{d.total.toLocaleString()}명</span></p>
       <p className={diff < 0 ? 'text-rose-400' : 'text-emerald-400'}>
-        2010 대비: <span className="font-semibold">{diff >= 0 ? '+' : ''}{diff.toLocaleString()}명 ({rate.toFixed(2)}%)</span>
+        기준 대비: <span className="font-semibold">{diff >= 0 ? '+' : ''}{diff.toLocaleString()}명 ({rate.toFixed(2)}%)</span>
       </p>
     </div>
   );
 };
 
-export default function TotalPopChart({ activeYear }: Props) {
-  const visibleData = POPULATION_DATA.filter((d) => d.year <= activeYear);
+export default function TotalPopChart({ activeYear, data }: Props) {
+  const sourceData = (data ?? POPULATION_DATA).filter(d => d.total > 0);
+  const visibleData = sourceData.filter((d) => d.year <= activeYear);
+  const baseTotal = sourceData[0]?.total ?? 0;
+  const maxTotal = Math.max(...sourceData.map(d => d.total));
+  const minTotal = Math.min(...sourceData.map(d => d.total));
+
+  const domainMin = Math.floor(minTotal * 0.95 / 10000) * 10000;
+  const domainMax = Math.ceil(maxTotal * 1.05 / 10000) * 10000;
 
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -53,15 +60,14 @@ export default function TotalPopChart({ activeYear }: Props) {
           tickLine={false}
         />
         <YAxis
-          domain={[250000, 360000]}
-          tickFormatter={(v) => `${(v / 10000).toFixed(0)}만`}
+          domain={[domainMin, domainMax]}
+          tickFormatter={(v) => v >= 10000 ? `${(v / 10000).toFixed(0)}만` : v.toLocaleString()}
           tick={{ fill: 'rgba(255,255,255,0.5)', fontSize: 11 }}
           axisLine={false}
           tickLine={false}
           width={44}
         />
-        <Tooltip content={<CustomTooltip />} />
-        <ReferenceLine y={300000} stroke="rgba(255,100,100,0.3)" strokeDasharray="4 4" label={{ value: '30만명', fill: '#FF6B6B', fontSize: 10, position: 'insideTopRight' }} />
+        <Tooltip content={<CustomTooltip base={baseTotal} />} />
         <Area
           type="monotone"
           dataKey="total"

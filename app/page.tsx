@@ -11,6 +11,8 @@ import TimelineSlider from '@/components/TimelineSlider';
 import AgeBarRace from '@/components/AgeBarRace';
 import RegionSelector from '@/components/RegionSelector';
 
+const DongCompareChart = dynamic(() => import('@/components/DongCompareChart'), { ssr: false });
+
 const TotalPopChart   = dynamic(() => import('@/components/TotalPopChart'),      { ssr: false });
 const AgeGroupChart   = dynamic(() => import('@/components/AgeGroupChart'),      { ssr: false });
 const AvgAgeChart     = dynamic(() => import('@/components/AvgAgeChart'),        { ssr: false });
@@ -42,6 +44,7 @@ export default function Dashboard() {
   const [isPlaying, setIsPlaying]   = useState(false);
   const [regionKey, setRegionKey]   = useState('district');
   const [multiKeys, setMultiKeys]   = useState<string[]>([]);
+  const [activeTab, setActiveTab]   = useState<'population' | 'dongCompare'>('population');
 
   // 멀티셀렉트 vs 단일 선택
   const isMulti = multiKeys.length > 0;
@@ -115,203 +118,225 @@ export default function Dashboard() {
       <div className="sticky top-0 z-30 bg-[#0B0F1A]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 flex flex-col gap-3">
 
-          {/* 타이틀 */}
+          {/* 타이틀 + 탭 + 재정비교 버튼 */}
           <div className="flex items-center justify-between gap-4">
             <motion.h1
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="text-2xl md:text-3xl font-black tracking-tight leading-tight"
+              className="text-xl md:text-2xl font-black tracking-tight leading-tight shrink-0"
             >
-              계양구 연령별 인구현황 대시보드
+              계양구 인구현황
               <span className="text-blue-400"> 2010–2025</span>
             </motion.h1>
-            <a href="/finance" className="shrink-0 px-5 py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold shadow-lg shadow-emerald-500/10 flex items-center gap-2">
-              💰 <span>재정비교</span> <span className="text-emerald-300">→</span>
+
+            {/* 탭 메뉴 */}
+            <div className="flex items-center gap-1 flex-1 justify-center">
+              <button
+                onClick={() => setActiveTab('population')}
+                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
+                  activeTab === 'population'
+                    ? 'bg-blue-500/25 border-blue-400/60 text-blue-300 shadow-md shadow-blue-500/20'
+                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
+                }`}
+              >
+                📈 인구현황
+              </button>
+              <button
+                onClick={() => setActiveTab('dongCompare')}
+                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
+                  activeTab === 'dongCompare'
+                    ? 'bg-indigo-500/25 border-indigo-400/60 text-indigo-300 shadow-md shadow-indigo-500/20'
+                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
+                }`}
+              >
+                🏘 동별 비교
+              </button>
+            </div>
+
+            <a href="/finance" className="shrink-0 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold flex items-center gap-1.5">
+              💰 재정비교
             </a>
           </div>
 
-          {/* 지역 선택 */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-          >
-            <RegionSelector
-              selectedKey={regionKey}
-              onChange={(k) => { setRegionKey(k); }}
-              multiKeys={multiKeys}
-              onMultiChange={setMultiKeys}
-              hint="▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 동별 비교가 가능합니다"
-            />
-          </motion.div>
-
-          {/* 타임라인 슬라이더 */}
-          <TimelineSlider
-            activeYear={activeYear}
-            isPlaying={isPlaying}
-            onYearChange={setActiveYear}
-            onTogglePlay={handleTogglePlay}
-          />
+          {/* 인구현황 탭 전용 컨트롤 */}
+          {activeTab === 'population' && (
+            <>
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+                <RegionSelector
+                  selectedKey={regionKey}
+                  onChange={(k) => { setRegionKey(k); }}
+                  multiKeys={multiKeys}
+                  onMultiChange={setMultiKeys}
+                  hint="▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 합산 데이터를 확인합니다"
+                />
+              </motion.div>
+              <TimelineSlider
+                activeYear={activeYear}
+                isPlaying={isPlaying}
+                onYearChange={setActiveYear}
+                onTogglePlay={handleTogglePlay}
+              />
+            </>
+          )}
         </div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
 
-        {/* ── KPI 카드 ── */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <KpiCard label="총 인구"       value={currentData.total}          diff={diffTotal}   diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0}    />
-          <KpiCard label="추정 평균연령" value={currentData.avgAge}         diff={diffAvgAge}  diffLabel={`${baseData.year}년 대비`} unit="세" decimals={2} delay={0.07} />
-          <KpiCard label="유소년 인구"   value={getYouthPop(currentData)}   diff={diffYouth}   diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0.14} />
-          <KpiCard label="고령 인구"     value={getElderlyPop(currentData)} diff={diffElderly} diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0.21} />
-        </div>
+        {/* ══ 인구현황 탭 ══ */}
+        {activeTab === 'population' && (
+          <>
+            {/* ── KPI 카드 ── */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <KpiCard label="총 인구"       value={currentData.total}          diff={diffTotal}   diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0}    />
+              <KpiCard label="추정 평균연령" value={currentData.avgAge}         diff={diffAvgAge}  diffLabel={`${baseData.year}년 대비`} unit="세" decimals={2} delay={0.07} />
+              <KpiCard label="유소년 인구"   value={getYouthPop(currentData)}   diff={diffYouth}   diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0.14} />
+              <KpiCard label="고령 인구"     value={getElderlyPop(currentData)} diff={diffElderly} diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0.21} />
+            </div>
 
-        {/* ── 유소년 / 고령 인구 차트 (NEW) ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-5"
-          >
-            <h2 className="text-sm font-semibold text-white/70 mb-3">
-              👶 유소년 인구 추이
-              <span className="ml-2 text-[10px] text-[#48DBFB]/70 font-normal">0~19세</span>
-            </h2>
-            <YouthElderlyChart
-              data={regionData}
-              activeYear={activeYear}
-              regionLabel={regionLabel}
-              type="youth"
-              crossoverYear={crossoverYear}
-            />
-          </motion.div>
+            {/* ── 유소년 / 고령 인구 차트 ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5"
+              >
+                <h2 className="text-sm font-semibold text-white/70 mb-3">
+                  👶 유소년 인구 추이
+                  <span className="ml-2 text-[10px] text-[#48DBFB]/70 font-normal">0~19세</span>
+                </h2>
+                <YouthElderlyChart data={regionData} activeYear={activeYear} regionLabel={regionLabel} type="youth" crossoverYear={crossoverYear} />
+              </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-5"
-          >
-            <h2 className="text-sm font-semibold text-white/70 mb-3">
-              🧓 고령 인구 추이
-              <span className="ml-2 text-[10px] text-[#FF9F43]/70 font-normal">60세 이상</span>
-            </h2>
-            <YouthElderlyChart
-              data={regionData}
-              activeYear={activeYear}
-              regionLabel={regionLabel}
-              type="elderly"
-              crossoverYear={crossoverYear}
-            />
-          </motion.div>
-        </div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5"
+              >
+                <h2 className="text-sm font-semibold text-white/70 mb-3">
+                  🧓 고령 인구 추이
+                  <span className="ml-2 text-[10px] text-[#FF9F43]/70 font-normal">60세 이상</span>
+                </h2>
+                <YouthElderlyChart data={regionData} activeYear={activeYear} regionLabel={regionLabel} type="elderly" crossoverYear={crossoverYear} />
+              </motion.div>
+            </div>
 
-        {/* ── 기존 차트 영역 ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white/70 mb-1">📉 총 인구 추이</h2>
-            <p className="text-xs text-white/30 mb-4">
-              {baseData.total.toLocaleString()}명 ({baseData.year}) → {currentData.total.toLocaleString()}명 ({activeYear})
-            </p>
-            <TotalPopChart activeYear={activeYear} />
-          </motion.div>
+            {/* ── 주요 차트 4개 ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm font-semibold text-white/70 mb-1">📉 총 인구 추이</h2>
+                <p className="text-xs text-white/30 mb-4">
+                  {baseData.total.toLocaleString()}명 ({baseData.year}) → {currentData.total.toLocaleString()}명 ({activeYear})
+                </p>
+                <TotalPopChart activeYear={activeYear} data={regionData} />
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.37 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white/70 mb-1">📈 평균연령 추이</h2>
-            <p className="text-xs text-white/30 mb-4">
-              {BASE_YEAR.avgAge}세 (2010) → {currentData.avgAge}세 ({activeYear}) · 막대: 전년대비 증가
-            </p>
-            <AvgAgeChart activeYear={activeYear} />
-          </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.37 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm font-semibold text-white/70 mb-1">📈 평균연령 추이</h2>
+                <p className="text-xs text-white/30 mb-4">
+                  {BASE_YEAR.avgAge}세 (2010) → {currentData.avgAge}세 ({activeYear}) · 막대: 전년대비 증가
+                </p>
+                <AvgAgeChart activeYear={activeYear} data={regionData} />
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white/70 mb-1">🏗 연령구간별 인구 (누적)</h2>
-            <p className="text-xs text-white/30 mb-4">연도별 연령구간 인구 분포 변화</p>
-            <AgeGroupChart activeYear={activeYear} />
-          </motion.div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm font-semibold text-white/70 mb-1">🏗 연령구간별 인구 (누적)</h2>
+                <p className="text-xs text-white/30 mb-4">연도별 연령구간 인구 분포 변화</p>
+                <AgeGroupChart activeYear={activeYear} data={regionData} />
+              </motion.div>
 
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.51 }}
-            className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white/70 mb-1">
-              🏅 연령별 순위 · <span className="text-blue-400">{activeYear}년</span>
-              <span className="text-white/30 font-normal text-xs ml-2">({regionLabel})</span>
-            </h2>
-            <p className="text-xs text-white/30 mb-4">인구 많은 연령대 순으로 정렬</p>
-            <AnimatePresence mode="popLayout">
-              <AgeBarRace key={`${regionKey}-${activeYear}`} data={currentData} />
-            </AnimatePresence>
-          </motion.div>
-        </div>
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.51 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm font-semibold text-white/70 mb-1">
+                  🏅 연령별 순위 · <span className="text-blue-400">{activeYear}년</span>
+                  <span className="text-white/30 font-normal text-xs ml-2">({regionLabel})</span>
+                </h2>
+                <p className="text-xs text-white/30 mb-4">인구 많은 연령대 순으로 정렬</p>
+                <AnimatePresence mode="popLayout">
+                  <AgeBarRace key={`${regionKey}-${activeYear}`} data={currentData} />
+                </AnimatePresence>
+              </motion.div>
+            </div>
 
-        {/* ── 요약 테이블 ── */}
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-          className="bg-white/5 border border-white/10 rounded-2xl p-5 overflow-x-auto">
-          <h2 className="text-sm font-semibold text-white/70 mb-4">
-            📋 연도별 전체 데이터
-            <span className="ml-2 text-white/30 font-normal text-xs">{regionLabel}</span>
-          </h2>
-          <table className="w-full text-xs text-white/70 border-collapse min-w-[780px]">
-            <thead>
-              <tr className="border-b border-white/10">
-                <th className="text-left py-2 pr-4 text-white/40 font-medium">연도</th>
-                <th className="text-right py-2 px-3 text-white/40 font-medium">총인구</th>
-                <th className="text-right py-2 px-3 text-white/40 font-medium">전년대비</th>
-                <th className="text-right py-2 px-3 text-white/40 font-medium">증감률</th>
-                <th className="text-right py-2 px-3 text-white/40 font-medium">평균연령</th>
-                <th className="text-right py-2 px-3 text-[#48DBFB]/70 font-medium">유소년</th>
-                <th className="text-right py-2 px-3 text-[#FF9F43]/70 font-medium">고령(60+)</th>
-                <th className="text-right py-2 px-3 text-white/40 font-medium">유소년비율</th>
-                <th className="text-right py-2 px-3 text-white/40 font-medium">고령화율</th>
-              </tr>
-            </thead>
-            <tbody>
-              {regionData.filter((d) => d.total > 0).map((d, i, arr) => {
-                const prev = i === 0 ? null : arr[i - 1];
-                const diff = prev ? d.total - prev.total : null;
-                const rate = prev ? ((d.total / prev.total) - 1) * 100 : null;
-                const youth = getYouthPop(d);
-                const elderly = getElderlyPop(d);
-                const isActive = d.year === activeYear;
-                return (
-                  <tr
-                    key={d.year}
-                    onClick={() => setActiveYear(d.year)}
-                    className={`border-b border-white/5 cursor-pointer transition-colors ${
-                      isActive ? 'bg-blue-500/15 border-blue-500/30' : 'hover:bg-white/5'
-                    }`}
-                  >
-                    <td className={`py-1.5 pr-4 font-bold ${isActive ? 'text-blue-400' : ''}`}>{d.year}</td>
-                    <td className="text-right px-3 tabular-nums">{d.total.toLocaleString()}</td>
-                    <td className={`text-right px-3 tabular-nums font-semibold ${diff === null ? '' : diff < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {diff === null ? '–' : `${diff >= 0 ? '+' : ''}${diff.toLocaleString()}`}
-                    </td>
-                    <td className={`text-right px-3 tabular-nums ${rate === null ? '' : rate < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                      {rate === null ? '–' : `${rate >= 0 ? '+' : ''}${rate.toFixed(2)}%`}
-                    </td>
-                    <td className="text-right px-3 tabular-nums text-orange-300">{d.avgAge > 0 ? `${d.avgAge.toFixed(2)}세` : '–'}</td>
-                    <td className="text-right px-3 tabular-nums text-[#48DBFB]">{youth.toLocaleString()}</td>
-                    <td className="text-right px-3 tabular-nums text-[#FF9F43]">{elderly.toLocaleString()}</td>
-                    <td className="text-right px-3 tabular-nums text-white/50">
-                      {d.total > 0 ? `${(youth / d.total * 100).toFixed(1)}%` : '–'}
-                    </td>
-                    <td className="text-right px-3 tabular-nums text-white/50">
-                      {d.total > 0 ? `${(elderly / d.total * 100).toFixed(1)}%` : '–'}
-                    </td>
+            {/* ── 요약 테이블 ── */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+              className="bg-white/5 border border-white/10 rounded-2xl p-5 overflow-x-auto">
+              <h2 className="text-sm font-semibold text-white/70 mb-4">
+                📋 연도별 전체 데이터
+                <span className="ml-2 text-white/30 font-normal text-xs">{regionLabel}</span>
+              </h2>
+              <table className="w-full text-xs text-white/70 border-collapse min-w-[780px]">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="text-left py-2 pr-4 text-white/40 font-medium">연도</th>
+                    <th className="text-right py-2 px-3 text-white/40 font-medium">총인구</th>
+                    <th className="text-right py-2 px-3 text-white/40 font-medium">전년대비</th>
+                    <th className="text-right py-2 px-3 text-white/40 font-medium">증감률</th>
+                    <th className="text-right py-2 px-3 text-white/40 font-medium">평균연령</th>
+                    <th className="text-right py-2 px-3 text-[#48DBFB]/70 font-medium">유소년</th>
+                    <th className="text-right py-2 px-3 text-[#FF9F43]/70 font-medium">고령(60+)</th>
+                    <th className="text-right py-2 px-3 text-white/40 font-medium">유소년비율</th>
+                    <th className="text-right py-2 px-3 text-white/40 font-medium">고령화율</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </motion.div>
+                </thead>
+                <tbody>
+                  {regionData.filter((d) => d.total > 0).map((d, i, arr) => {
+                    const prev = i === 0 ? null : arr[i - 1];
+                    const diff = prev ? d.total - prev.total : null;
+                    const rate = prev ? ((d.total / prev.total) - 1) * 100 : null;
+                    const youth = getYouthPop(d);
+                    const elderly = getElderlyPop(d);
+                    const isActive = d.year === activeYear;
+                    return (
+                      <tr
+                        key={d.year}
+                        onClick={() => setActiveYear(d.year)}
+                        className={`border-b border-white/5 cursor-pointer transition-colors ${
+                          isActive ? 'bg-blue-500/15 border-blue-500/30' : 'hover:bg-white/5'
+                        }`}
+                      >
+                        <td className={`py-1.5 pr-4 font-bold ${isActive ? 'text-blue-400' : ''}`}>{d.year}</td>
+                        <td className="text-right px-3 tabular-nums">{d.total.toLocaleString()}</td>
+                        <td className={`text-right px-3 tabular-nums font-semibold ${diff === null ? '' : diff < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          {diff === null ? '–' : `${diff >= 0 ? '+' : ''}${diff.toLocaleString()}`}
+                        </td>
+                        <td className={`text-right px-3 tabular-nums ${rate === null ? '' : rate < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          {rate === null ? '–' : `${rate >= 0 ? '+' : ''}${rate.toFixed(2)}%`}
+                        </td>
+                        <td className="text-right px-3 tabular-nums text-orange-300">{d.avgAge > 0 ? `${d.avgAge.toFixed(2)}세` : '–'}</td>
+                        <td className="text-right px-3 tabular-nums text-[#48DBFB]">{youth.toLocaleString()}</td>
+                        <td className="text-right px-3 tabular-nums text-[#FF9F43]">{elderly.toLocaleString()}</td>
+                        <td className="text-right px-3 tabular-nums text-white/50">
+                          {d.total > 0 ? `${(youth / d.total * 100).toFixed(1)}%` : '–'}
+                        </td>
+                        <td className="text-right px-3 tabular-nums text-white/50">
+                          {d.total > 0 ? `${(elderly / d.total * 100).toFixed(1)}%` : '–'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </motion.div>
 
-        <p className="text-center text-xs text-white/20 pb-4">
-          자료출처 :{' '}
-          <a
-            href="https://jumin.mois.go.kr/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2 hover:text-white/50 transition-colors"
-          >
-            행정안전부 주민등록 인구통계 (jumin.mois.go.kr)
-          </a>
-          {' '}· 인천광역시 계양구 · 2010~2025
-        </p>
+            <p className="text-center text-xs text-white/20 pb-4">
+              자료출처 :{' '}
+              <a href="https://jumin.mois.go.kr/" target="_blank" rel="noopener noreferrer"
+                className="underline underline-offset-2 hover:text-white/50 transition-colors">
+                행정안전부 주민등록 인구통계 (jumin.mois.go.kr)
+              </a>
+              {' '}· 인천광역시 계양구 · 2010~2025
+            </p>
+          </>
+        )}
+
+        {/* ══ 동별 비교 탭 ══ */}
+        {activeTab === 'dongCompare' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
+            <DongCompareChart />
+          </motion.div>
+        )}
+
       </div>
     </main>
   );
