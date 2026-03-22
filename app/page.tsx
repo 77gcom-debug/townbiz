@@ -36,6 +36,21 @@ export default function Dashboard() {
 
   const baseData = validData[0] ?? POPULATION_DATA[0];
 
+  // 유소년 ↔ 고령 크로스오버 연도 계산
+  const crossoverYear = (() => {
+    for (let i = 1; i < validData.length; i++) {
+      const prev = validData[i - 1];
+      const curr = validData[i];
+      const prevYouth = getYouthPop(prev);
+      const prevElderly = getElderlyPop(prev);
+      const currYouth = getYouthPop(curr);
+      const currElderly = getElderlyPop(curr);
+      if (prevYouth >= prevElderly && currYouth < currElderly) return curr.year;
+      if (prevYouth <= prevElderly && currYouth > currElderly) return curr.year;
+    }
+    return null;
+  })();
+
   // 자동 재생
   useEffect(() => {
     if (!isPlaying) return;
@@ -77,11 +92,8 @@ export default function Dashboard() {
 
         {/* ── 헤더 ── */}
         <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
-          <p className="text-xs tracking-[0.2em] uppercase text-white/40 font-medium">
-            인천광역시 계양구 · 주민자치 통계
-          </p>
           <h1 className="text-3xl md:text-4xl font-black tracking-tight">
-            연령별 인구현황 대시보드
+            계양구 연령별 인구현황 대시보드
             <span className="text-blue-400"> 2010–2025</span>
           </h1>
           <p className="text-sm text-white/40 mt-1">▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 동별 비교가 가능합니다</p>
@@ -123,6 +135,7 @@ export default function Dashboard() {
               activeYear={activeYear}
               regionLabel={regionInfo.label}
               type="youth"
+              crossoverYear={crossoverYear}
             />
           </motion.div>
 
@@ -139,6 +152,7 @@ export default function Dashboard() {
               activeYear={activeYear}
               regionLabel={regionInfo.label}
               type="elderly"
+              crossoverYear={crossoverYear}
             />
           </motion.div>
         </div>

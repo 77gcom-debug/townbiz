@@ -16,15 +16,11 @@ export default function RegionSelector({ selectedKey, onChange }: Props) {
     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-3">
       <p className="text-xs font-semibold tracking-widest uppercase text-white/40">지역 선택</p>
 
-      {/* 구 전체 버튼 */}
-      <div className="flex gap-2">
+      {/* 전체 + 동 버튼 한 행 */}
+      <div className="flex flex-wrap gap-1.5 items-center">
         {district.map((r) => (
           <RegionBtn key={r.key} region={r} selected={selectedKey === r.key} onClick={() => onChange(r.key)} variant="district" />
         ))}
-      </div>
-
-      {/* 동 버튼 그리드 */}
-      <div className="flex flex-wrap gap-1.5">
         {dongs.map((r) => (
           <RegionBtn key={r.key} region={r} selected={selectedKey === r.key} onClick={() => onChange(r.key)} variant="dong" />
         ))}

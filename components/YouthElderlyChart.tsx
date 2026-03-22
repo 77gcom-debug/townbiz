@@ -8,9 +8,9 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceDot,
 } from 'recharts';
 import { YearData } from '@/lib/data';
 import { getYouthPop, getElderlyPop } from '@/lib/allRegions';
@@ -20,6 +20,7 @@ interface Props {
   activeYear: number;
   regionLabel: string;
   type: 'youth' | 'elderly';
+  crossoverYear?: number | null;
 }
 
 const YOUTH_COLOR = '#48DBFB';
@@ -44,7 +45,7 @@ const CustomTooltip = ({ active, payload, label, type }: any) => {
   );
 };
 
-export default function YouthElderlyChart({ data, activeYear, regionLabel, type }: Props) {
+export default function YouthElderlyChart({ data, activeYear, regionLabel, type, crossoverYear }: Props) {
   const isYouth = type === 'youth';
   const color = isYouth ? YOUTH_COLOR : ELDERLY_COLOR;
   const gradId = isYouth ? 'youthGrad' : 'elderlyGrad';
@@ -67,6 +68,15 @@ export default function YouthElderlyChart({ data, activeYear, regionLabel, type 
       </div>
     );
   }
+
+  // 크로스오버 시점의 값 (점 표시용)
+  const crossoverData = crossoverYear
+    ? data.find((d) => d.year === crossoverYear)
+    : null;
+  const crossoverValue = crossoverData
+    ? (isYouth ? getYouthPop(crossoverData) : getElderlyPop(crossoverData))
+    : null;
+  const showCrossover = crossoverYear != null && crossoverYear <= activeYear;
 
   const baseVal = chartData[0]?.value ?? 0;
   const currVal = chartData[chartData.length - 1]?.value ?? 0;
@@ -131,6 +141,41 @@ export default function YouthElderlyChart({ data, activeYear, regionLabel, type 
             strokeDasharray="4 4"
             label={{ value: '20%', fill: 'rgba(255,255,255,0.3)', fontSize: 9, position: 'insideTopRight' }}
           />
+
+          {/* 크로스오버 세로선 */}
+          {showCrossover && crossoverYear && (
+            <ReferenceLine
+              yAxisId="val"
+              x={crossoverYear}
+              stroke="rgba(255,255,100,0.5)"
+              strokeDasharray="4 3"
+              label={{
+                value: `${crossoverYear}년 역전`,
+                fill: 'rgba(255,255,100,0.9)',
+                fontSize: 9,
+                position: 'insideTopLeft',
+              }}
+            />
+          )}
+
+          {/* 크로스오버 점 */}
+          {showCrossover && crossoverYear && crossoverValue != null && (
+            <ReferenceDot
+              yAxisId="val"
+              x={crossoverYear}
+              y={crossoverValue}
+              r={7}
+              fill="#FFFF64"
+              stroke="#fff"
+              strokeWidth={2}
+              label={{
+                value: crossoverValue.toLocaleString(),
+                fill: '#FFFF64',
+                fontSize: 9,
+                position: 'top',
+              }}
+            />
+          )}
 
           <Area
             yAxisId="val"
