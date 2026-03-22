@@ -6,15 +6,19 @@ import { REGIONS, RegionInfo } from '@/lib/allRegions';
 interface Props {
   selectedKey: string;
   onChange: (key: string) => void;
+  hint?: string;
 }
 
-export default function RegionSelector({ selectedKey, onChange }: Props) {
+export default function RegionSelector({ selectedKey, onChange, hint }: Props) {
   const district = REGIONS.filter((r) => r.type === 'district');
   const dongs = REGIONS.filter((r) => r.type === 'dong');
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-3">
-      <p className="text-xs font-semibold tracking-widest uppercase text-white/40">지역 선택</p>
+      <div className="flex items-center justify-between gap-4">
+        <p className="text-xs font-semibold tracking-widest uppercase text-white/40 shrink-0">지역 선택</p>
+        {hint && <p className="text-xs text-white/35 leading-snug text-right">{hint}</p>}
+      </div>
 
       {/* 전체 + 동 버튼 한 행 */}
       <div className="flex flex-wrap gap-1.5 items-center">

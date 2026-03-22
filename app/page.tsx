@@ -88,29 +88,41 @@ export default function Dashboard() {
         <div className="absolute top-1/2 left-0 w-[300px] h-[300px] bg-indigo-700/8 rounded-full blur-[90px]" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8 flex flex-col gap-6">
+      {/* ── 고정 헤더 ── */}
+      <div className="sticky top-0 z-30 bg-[#0B0F1A]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
+        <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 flex flex-col gap-3">
 
-        {/* ── 헤더 ── */}
-        <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col gap-1">
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+          {/* 타이틀 */}
+          <motion.h1
+            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+            className="text-2xl md:text-3xl font-black tracking-tight leading-tight"
+          >
             계양구 연령별 인구현황 대시보드
             <span className="text-blue-400"> 2010–2025</span>
-          </h1>
-          <p className="text-sm text-white/40 mt-1">▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 동별 비교가 가능합니다</p>
-        </motion.div>
+          </motion.h1>
 
-        {/* ── 지역 선택 ── */}
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <RegionSelector selectedKey={regionKey} onChange={(k) => { setRegionKey(k); }} />
-        </motion.div>
+          {/* 지역 선택 */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+          >
+            <RegionSelector
+              selectedKey={regionKey}
+              onChange={(k) => { setRegionKey(k); }}
+              hint="▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 동별 비교가 가능합니다"
+            />
+          </motion.div>
 
-        {/* ── 타임라인 슬라이더 ── */}
-        <TimelineSlider
-          activeYear={activeYear}
-          isPlaying={isPlaying}
-          onYearChange={setActiveYear}
-          onTogglePlay={handleTogglePlay}
-        />
+          {/* 타임라인 슬라이더 */}
+          <TimelineSlider
+            activeYear={activeYear}
+            isPlaying={isPlaying}
+            onYearChange={setActiveYear}
+            onTogglePlay={handleTogglePlay}
+          />
+        </div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
 
         {/* ── KPI 카드 ── */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
