@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
-import { POPULATION_DATA, BASE_YEAR, AGE_GROUPS } from '@/lib/data';
+import { POPULATION_DATA, BASE_YEAR, AGE_GROUPS, YearData, AgeGroup } from '@/lib/data';
 import { ALL_REGION_DATA, REGIONS, getYouthPop, getElderlyPop } from '@/lib/allRegions';
 import KpiCard from '@/components/KpiCard';
 import TimelineSlider from '@/components/TimelineSlider';
@@ -19,13 +19,36 @@ const YouthElderlyChart = dynamic(() => import('@/components/YouthElderlyChart')
 const YEARS = POPULATION_DATA.map((d) => d.year);
 const PLAY_INTERVAL = 900;
 
+/** 여러 동 데이터를 연도별로 합산 */
+function mergeRegionData(keys: string[]): YearData[] {
+  return YEARS.map((year) => {
+    const rows = keys
+      .map((k) => (ALL_REGION_DATA[k] ?? POPULATION_DATA).find((d) => d.year === year))
+      .filter((d): d is YearData => !!d && d.total > 0);
+    if (rows.length === 0) return { year, total: 0, avgAge: 0, ages: Object.fromEntries(AGE_GROUPS.map((a) => [a, 0])) as Record<AgeGroup, number> };
+    const total = rows.reduce((s, d) => s + d.total, 0);
+    const ages = Object.fromEntries(
+      AGE_GROUPS.map((a) => [a, rows.reduce((s, d) => s + (d.ages[a] ?? 0), 0)])
+    ) as Record<AgeGroup, number>;
+    const avgAge = total > 0
+      ? parseFloat((rows.reduce((s, d) => s + d.avgAge * d.total, 0) / total).toFixed(2))
+      : 0;
+    return { year, total, avgAge, ages };
+  });
+}
+
 export default function Dashboard() {
   const [activeYear, setActiveYear] = useState(YEARS[0]);
   const [isPlaying, setIsPlaying]   = useState(false);
   const [regionKey, setRegionKey]   = useState('district');
+  const [multiKeys, setMultiKeys]   = useState<string[]>([]);
 
-  // 선택 지역 데이터
-  const regionData = ALL_REGION_DATA[regionKey] ?? POPULATION_DATA;
+  // 멀티셀렉트 vs 단일 선택
+  const isMulti = multiKeys.length > 0;
+  const regionData = isMulti ? mergeRegionData(multiKeys) : (ALL_REGION_DATA[regionKey] ?? POPULATION_DATA);
+  const regionLabel = isMulti
+    ? multiKeys.map((k) => REGIONS.find((r) => r.key === k)?.label ?? k).join(' + ')
+    : (REGIONS.find((r) => r.key === regionKey)?.label ?? '');
   const regionInfo = REGIONS.find((r) => r.key === regionKey)!;
 
   // 현재 연도 스냅샷 (없으면 마지막 유효 연도 사용)
@@ -93,13 +116,18 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 flex flex-col gap-3">
 
           {/* 타이틀 */}
-          <motion.h1
-            initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-            className="text-2xl md:text-3xl font-black tracking-tight leading-tight"
-          >
-            계양구 연령별 인구현황 대시보드
-            <span className="text-blue-400"> 2010–2025</span>
-          </motion.h1>
+          <div className="flex items-center justify-between gap-4">
+            <motion.h1
+              initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
+              className="text-2xl md:text-3xl font-black tracking-tight leading-tight"
+            >
+              계양구 연령별 인구현황 대시보드
+              <span className="text-blue-400"> 2010–2025</span>
+            </motion.h1>
+            <a href="/finance" className="shrink-0 px-5 py-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold shadow-lg shadow-emerald-500/10 flex items-center gap-2">
+              💰 <span>재정비교</span> <span className="text-emerald-300">→</span>
+            </a>
+          </div>
 
           {/* 지역 선택 */}
           <motion.div
@@ -108,6 +136,8 @@ export default function Dashboard() {
             <RegionSelector
               selectedKey={regionKey}
               onChange={(k) => { setRegionKey(k); }}
+              multiKeys={multiKeys}
+              onMultiChange={setMultiKeys}
               hint="▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 동별 비교가 가능합니다"
             />
           </motion.div>
@@ -145,7 +175,7 @@ export default function Dashboard() {
             <YouthElderlyChart
               data={regionData}
               activeYear={activeYear}
-              regionLabel={regionInfo.label}
+              regionLabel={regionLabel}
               type="youth"
               crossoverYear={crossoverYear}
             />
@@ -162,7 +192,7 @@ export default function Dashboard() {
             <YouthElderlyChart
               data={regionData}
               activeYear={activeYear}
-              regionLabel={regionInfo.label}
+              regionLabel={regionLabel}
               type="elderly"
               crossoverYear={crossoverYear}
             />
@@ -200,7 +230,7 @@ export default function Dashboard() {
             className="bg-white/5 border border-white/10 rounded-2xl p-5">
             <h2 className="text-sm font-semibold text-white/70 mb-1">
               🏅 연령별 순위 · <span className="text-blue-400">{activeYear}년</span>
-              <span className="text-white/30 font-normal text-xs ml-2">({regionInfo.label})</span>
+              <span className="text-white/30 font-normal text-xs ml-2">({regionLabel})</span>
             </h2>
             <p className="text-xs text-white/30 mb-4">인구 많은 연령대 순으로 정렬</p>
             <AnimatePresence mode="popLayout">
@@ -214,7 +244,7 @@ export default function Dashboard() {
           className="bg-white/5 border border-white/10 rounded-2xl p-5 overflow-x-auto">
           <h2 className="text-sm font-semibold text-white/70 mb-4">
             📋 연도별 전체 데이터
-            <span className="ml-2 text-white/30 font-normal text-xs">{regionInfo.label}</span>
+            <span className="ml-2 text-white/30 font-normal text-xs">{regionLabel}</span>
           </h2>
           <table className="w-full text-xs text-white/70 border-collapse min-w-[780px]">
             <thead>
