@@ -157,25 +157,28 @@ export default function Dashboard() {
             </a>
           </div>
 
-          {/* 인구현황 탭 전용 컨트롤 */}
+          {/* 공통 지역 선택 (항상 표시) */}
+          <RegionSelector
+            selectedKey={regionKey}
+            onChange={(k) => { setRegionKey(k); setMultiKeys([]); }}
+            multiKeys={multiKeys}
+            onMultiChange={setMultiKeys}
+            mode={activeTab === 'dongCompare' ? 'compare' : 'merge'}
+            maxSelect={4}
+            hint={activeTab === 'population'
+              ? '▶ 재생 버튼으로 연도별 변화를 확인하고, 최대 4개 동을 합산해 비교합니다'
+              : '동을 선택하면 아래에 비교 차트가 나타납니다 (최대 4개)'
+            }
+          />
+
+          {/* 타임라인 슬라이더 - 인구현황 탭만 */}
           {activeTab === 'population' && (
-            <>
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-                <RegionSelector
-                  selectedKey={regionKey}
-                  onChange={(k) => { setRegionKey(k); }}
-                  multiKeys={multiKeys}
-                  onMultiChange={setMultiKeys}
-                  hint="▶ 재생 버튼으로 연도별 변화를 확인하고, 지역을 선택해 합산 데이터를 확인합니다"
-                />
-              </motion.div>
-              <TimelineSlider
-                activeYear={activeYear}
-                isPlaying={isPlaying}
-                onYearChange={setActiveYear}
-                onTogglePlay={handleTogglePlay}
-              />
-            </>
+            <TimelineSlider
+              activeYear={activeYear}
+              isPlaying={isPlaying}
+              onYearChange={setActiveYear}
+              onTogglePlay={handleTogglePlay}
+            />
           )}
         </div>
       </div>
@@ -333,7 +336,7 @@ export default function Dashboard() {
         {/* ══ 동별 비교 탭 ══ */}
         {activeTab === 'dongCompare' && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
-            <DongCompareChart />
+            <DongCompareChart selectedDongs={multiKeys} />
           </motion.div>
         )}
 

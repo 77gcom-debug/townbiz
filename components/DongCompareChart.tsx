@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -9,7 +8,6 @@ import {
 import { ALL_REGION_DATA, REGIONS, getYouthPop, getElderlyPop } from '@/lib/allRegions';
 import { POPULATION_DATA } from '@/lib/data';
 
-const DONG_LIST = REGIONS.filter(r => r.type === 'dong');
 const YEARS = POPULATION_DATA.map(d => d.year);
 
 const DONG_COLORS = [
@@ -39,17 +37,11 @@ function CustomTooltip({ active, payload, label, unit }: any) {
   );
 }
 
-export default function DongCompareChart() {
-  const [selectedDongs, setSelectedDongs] = useState<string[]>([]);
+interface Props {
+  selectedDongs: string[];
+}
 
-  const toggleDong = (key: string) => {
-    setSelectedDongs(prev =>
-      prev.includes(key)
-        ? prev.filter(k => k !== key)
-        : prev.length < 4 ? [...prev, key] : prev
-    );
-  };
-
+export default function DongCompareChart({ selectedDongs }: Props) {
   // 차트 데이터 구성
   const chartData = YEARS.map(year => {
     const row: Record<string, any> = { year };
@@ -72,50 +64,19 @@ export default function DongCompareChart() {
     <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
       {/* 헤더 */}
       <div>
-        <h2 className="text-sm font-semibold text-white/80">📊 동별 비교</h2>
-        <p className="text-xs text-white/35 mt-0.5">최대 4개 동 선택 · 합산이 아닌 각 동의 수치를 동시에 비교합니다</p>
-      </div>
-
-      {/* 동 선택 버튼 */}
-      <div className="flex flex-wrap gap-1.5">
-        {DONG_LIST.map((r, i) => {
-          const idx = selectedDongs.indexOf(r.key);
-          const isSelected = idx !== -1;
-          const color = isSelected ? DONG_COLORS[idx] : undefined;
-          const isDisabled = !isSelected && selectedDongs.length >= 4;
-          return (
-            <button
-              key={r.key}
-              onClick={() => toggleDong(r.key)}
-              disabled={isDisabled}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
-                isSelected
-                  ? 'text-white border-transparent'
-                  : isDisabled
-                  ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
-                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
-              }`}
-              style={isSelected ? { background: `${color}33`, borderColor: color, color } : {}}
-            >
-              {isSelected && <span className="mr-1 font-black">{idx + 1}</span>}
-              {r.label}
-            </button>
-          );
-        })}
-        {selectedDongs.length > 0 && (
-          <button
-            onClick={() => setSelectedDongs([])}
-            className="px-3 py-1.5 rounded-xl text-xs text-white/40 hover:text-white/70 transition-colors border border-white/10 hover:border-white/20"
-          >
-            초기화
-          </button>
-        )}
+        <h2 className="text-sm font-semibold text-white/80">🏘 동별 비교</h2>
+        <p className="text-xs text-white/35 mt-0.5">
+          {selectedDongs.length > 0
+            ? `선택된 동: ${selectedDongs.map(k => REGIONS.find(r => r.key === k)?.label).join(' · ')} · 합산이 아닌 각 동의 수치를 동시에 비교합니다`
+            : '위 지역 선택에서 동을 체크하면 비교 차트가 나타납니다 (최대 4개)'}
+        </p>
       </div>
 
       {/* 선택 안 했을 때 안내 */}
       {selectedDongs.length === 0 && (
-        <div className="flex items-center justify-center h-40 text-white/25 text-sm">
-          위에서 동을 선택하면 비교 차트가 나타납니다
+        <div className="flex flex-col items-center justify-center h-48 gap-3 text-white/20">
+          <span className="text-4xl">☝️</span>
+          <span className="text-sm">상단 지역 선택에서 동을 체크해 주세요</span>
         </div>
       )}
 

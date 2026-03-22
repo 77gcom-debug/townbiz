@@ -9,17 +9,21 @@ interface Props {
   multiKeys: string[];
   onMultiChange: (keys: string[]) => void;
   hint?: string;
+  mode?: 'merge' | 'compare';
+  maxSelect?: number;
 }
 
-export default function RegionSelector({ selectedKey, onChange, multiKeys, onMultiChange, hint }: Props) {
+export default function RegionSelector({ selectedKey, onChange, multiKeys, onMultiChange, hint, mode = 'merge', maxSelect }: Props) {
   const district = REGIONS.filter((r) => r.type === 'district');
   const dongs = REGIONS.filter((r) => r.type === 'dong');
   const isMultiMode = multiKeys.length > 0;
+  const isCompare = mode === 'compare';
 
   const toggleMulti = (key: string) => {
     if (multiKeys.includes(key)) {
       onMultiChange(multiKeys.filter((k) => k !== key));
     } else {
+      if (maxSelect && multiKeys.length >= maxSelect) return;
       onMultiChange([...multiKeys, key]);
     }
   };
@@ -35,9 +39,16 @@ export default function RegionSelector({ selectedKey, onChange, multiKeys, onMul
         <div className="flex items-center gap-2 shrink-0">
           <p className="text-xs font-semibold tracking-widest uppercase text-white/40">지역 선택</p>
           {isMultiMode && (
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              {multiKeys.length}개 합산
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+              isCompare
+                ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+            }`}>
+              {multiKeys.length}{maxSelect ? `/${maxSelect}` : ''}개 {isCompare ? '비교' : '합산'}
             </span>
+          )}
+          {!isMultiMode && isCompare && (
+            <span className="text-[10px] text-indigo-400/60">최대 {maxSelect ?? 4}개 선택</span>
           )}
         </div>
         {isMultiMode
@@ -52,12 +63,16 @@ export default function RegionSelector({ selectedKey, onChange, multiKeys, onMul
         ))}
         {dongs.map((r) => {
           const isChecked = multiKeys.includes(r.key);
+          const isDisabled = !isChecked && !!maxSelect && multiKeys.length >= maxSelect;
           return (
             <div key={r.key} className="flex flex-col items-center gap-0.5">
               <button
                 onClick={() => toggleMulti(r.key)}
+                disabled={isDisabled}
                 className={`w-4 h-4 rounded-sm border flex items-center justify-center transition-all duration-150 ${
-                  isChecked ? 'bg-emerald-500 border-emerald-400' : 'bg-white/5 border-white/20 hover:border-emerald-400/60'
+                  isChecked
+                    ? isCompare ? 'bg-indigo-500 border-indigo-400' : 'bg-emerald-500 border-emerald-400'
+                    : isDisabled ? 'bg-white/5 border-white/10 opacity-30 cursor-not-allowed' : 'bg-white/5 border-white/20 hover:border-emerald-400/60'
                 }`}
               >
                 {isChecked && (
@@ -69,9 +84,10 @@ export default function RegionSelector({ selectedKey, onChange, multiKeys, onMul
               <RegionBtn
                 region={r}
                 selected={(!isMultiMode && selectedKey === r.key) || isChecked}
-                onClick={() => isMultiMode ? toggleMulti(r.key) : (onMultiChange([]), onChange(r.key))}
+                onClick={() => isDisabled ? undefined : isMultiMode ? toggleMulti(r.key) : (onMultiChange([]), onChange(r.key))}
                 variant="dong"
-                highlight={isChecked ? 'multi' : undefined}
+                highlight={isChecked ? (isCompare ? 'compare' : 'multi') : undefined}
+                disabled={isDisabled}
               />
             </div>
           );
@@ -79,8 +95,8 @@ export default function RegionSelector({ selectedKey, onChange, multiKeys, onMul
       </div>
 
       {isMultiMode && (
-        <p className="text-xs text-emerald-400/80">
-          합산: {multiKeys.map((k) => REGIONS.find((r) => r.key === k)?.label).join(' + ')}
+        <p className={`text-xs ${isCompare ? 'text-indigo-400/80' : 'text-emerald-400/80'}`}>
+          {isCompare ? '비교' : '합산'}: {multiKeys.map((k) => REGIONS.find((r) => r.key === k)?.label).join(' + ')}
         </p>
       )}
     </div>
@@ -88,24 +104,30 @@ export default function RegionSelector({ selectedKey, onChange, multiKeys, onMul
 }
 
 function RegionBtn({
-  region, selected, onClick, variant, highlight,
+  region, selected, onClick, variant, highlight, disabled,
 }: {
   region: RegionInfo;
   selected: boolean;
   onClick: () => void;
   variant: 'district' | 'dong';
-  highlight?: 'multi';
+  highlight?: 'multi' | 'compare';
+  disabled?: boolean;
 }) {
   const isDistrict = variant === 'district';
   const isMultiSelected = highlight === 'multi';
+  const isCompareSelected = highlight === 'compare';
 
   return (
     <motion.button
       onClick={onClick}
-      whileTap={{ scale: 0.95 }}
+      whileTap={disabled ? {} : { scale: 0.95 }}
       className={`relative px-3 py-1.5 rounded-xl text-sm font-semibold transition-all duration-200 border ${
-        selected
-          ? isMultiSelected
+        disabled
+          ? 'bg-white/3 border-white/5 text-white/20 cursor-not-allowed'
+          : selected
+          ? isCompareSelected
+            ? 'bg-indigo-500/70 border-indigo-400 text-white shadow-md shadow-indigo-500/20'
+            : isMultiSelected
             ? 'bg-emerald-500/70 border-emerald-400 text-white shadow-md shadow-emerald-500/20'
             : isDistrict
             ? 'bg-blue-500 border-blue-400 text-white shadow-lg shadow-blue-500/30'
