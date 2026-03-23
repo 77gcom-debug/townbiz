@@ -101,33 +101,52 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 헤더 */}
-      <div>
-        <h2 className="text-sm font-semibold text-white/80">🏘 동별 비교</h2>
-        <p className="text-xs text-white/35 mt-0.5">
-          {selectedDongs.length > 0
-            ? `${dongLabels.join(' · ')} · 각 동의 수치를 연도별로 비교합니다`
-            : '위 지역 선택에서 동을 체크하면 비교 차트가 나타납니다 (최대 4개)'}
-        </p>
-      </div>
-
       {/* 선택 없을 때 */}
       {selectedDongs.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-48 gap-3 text-white/20">
-          <span className="text-4xl">☝️</span>
-          <span className="text-sm">상단 지역 선택에서 동을 체크해 주세요</span>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center justify-center py-12 gap-4"
+        >
+          <motion.div
+            animate={{ y: [0, -6, 0] }}
+            transition={{ repeat: Infinity, duration: 1.4, ease: 'easeInOut' }}
+            className="text-5xl"
+          >
+            ☝️
+          </motion.div>
+          <div className="text-center space-y-1.5">
+            <p className="text-base font-bold text-white/70">상단 지역 선택에서 동을 체크해 주세요</p>
+            <p className="text-xs text-white/35">최대 4개 동을 선택해 연도별 수치를 비교합니다</p>
+          </div>
+          {/* 위쪽 화살표 */}
+          <motion.div
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ repeat: Infinity, duration: 1.2, ease: 'easeInOut' }}
+            className="flex flex-col items-center gap-1 text-blue-400/60"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              style={{ marginTop: '-10px' }}>
+              <polyline points="18 15 12 9 6 15" />
+            </svg>
+          </motion.div>
+        </motion.div>
       )}
 
       {selectedDongs.length > 0 && (
         <>
-          {/* ── KPI 카드: 선택된 동별 현재 수치 ── */}
+          {/* ── KPI 카드: 선택된 동별 현재 수치 (항상 1행) ── */}
           <AnimatePresence mode="popLayout">
             <motion.div
               key={selectedDongs.join(',')}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="grid gap-3"
+              className="grid gap-2"
               style={{ gridTemplateColumns: `repeat(${selectedDongs.length}, minmax(0, 1fr))` }}
             >
               {selectedDongs.map((key, i) => {
@@ -147,35 +166,42 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.07 }}
-                    className="rounded-2xl p-4 border flex flex-col gap-1.5"
+                    className="rounded-xl px-3 py-2.5 border flex flex-row items-center gap-3"
                     style={{
                       background: `${color}0d`,
                       borderColor: `${color}33`,
                     }}
                   >
-                    {/* 동 이름 */}
-                    <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
-                      <span className="text-xs font-bold" style={{ color }}>{label}</span>
-                    </div>
-                    {/* 총인구 */}
-                    <AnimatedNumber
-                      value={total}
-                      suffix="명"
-                      duration={0.8}
-                      className="text-xl md:text-2xl font-black text-white tabular-nums leading-none"
-                    />
-                    {/* 증감 */}
-                    {diff !== 0 && (
-                      <div className={`flex items-center gap-1 text-xs font-semibold ${isDown ? 'text-rose-400' : 'text-emerald-400'}`}>
-                        <span>{isDown ? '▼' : '▲'}</span>
-                        <AnimatedNumber value={Math.abs(diff)} suffix="명" duration={0.8} />
-                        <span className="font-normal text-white/30 ml-0.5">
-                          ({isDown ? '−' : '+'}<AnimatedNumber value={Math.abs(rate)} decimals={1} suffix="%" duration={0.8} />)
-                        </span>
+                    {/* 왼쪽: 동 이름 */}
+                    <div className="flex flex-col gap-0.5 shrink-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
+                        <span className="text-[11px] font-bold" style={{ color }}>{label}</span>
                       </div>
-                    )}
-                    <span className="text-[10px] text-white/25">{YEARS[0]}년 대비 · {activeYear}년</span>
+                      <span className="text-[9px] text-white/25 pl-3.5">{activeYear}년</span>
+                    </div>
+
+                    {/* 구분선 */}
+                    <div className="w-px self-stretch bg-white/10 shrink-0" />
+
+                    {/* 오른쪽: 수치 */}
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <AnimatedNumber
+                        value={total}
+                        suffix="명"
+                        duration={0.8}
+                        className="text-base md:text-lg font-black text-white tabular-nums leading-none"
+                      />
+                      {diff !== 0 && (
+                        <div className={`flex items-center gap-0.5 text-[10px] font-semibold ${isDown ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          <span>{isDown ? '▼' : '▲'}</span>
+                          <AnimatedNumber value={Math.abs(diff)} suffix="명" duration={0.8} />
+                          <span className="text-white/30 font-normal">
+                            ({isDown ? '−' : '+'}<AnimatedNumber value={Math.abs(rate)} decimals={1} suffix="%" duration={0.8} />)
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </motion.div>
                 );
               })}

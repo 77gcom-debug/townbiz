@@ -45,7 +45,7 @@ export default function Dashboard() {
   const [regionKey, setRegionKey]   = useState('district');
   const [multiKeys, setMultiKeys]   = useState<string[]>([]);
   const [activeTab, setActiveTab]   = useState<'population' | 'dongCompare'>('population');
-  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(true);
 
   // 멀티셀렉트 vs 단일 선택
   const isMulti = multiKeys.length > 0;
@@ -78,7 +78,16 @@ export default function Dashboard() {
     return null;
   })();
 
-  // 자동 재생
+  // 자동 재생 (페이지 로드 후 2.5초 뒤 시작)
+  useEffect(() => {
+    const autoStart = setTimeout(() => {
+      setActiveYear(YEARS[0]);
+      setIsPlaying(true);
+    }, 2500);
+    return () => clearTimeout(autoStart);
+  }, []);
+
+
   useEffect(() => {
     if (!isPlaying) return;
     const timer = setInterval(() => {
@@ -157,22 +166,31 @@ export default function Dashboard() {
               <a href="/finance" className="hidden md:flex px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold items-center gap-1.5">
                 💰 재정비교
               </a>
-              {/* 헤더 접기/펼치기 버튼 */}
-              <button
-                onClick={() => setHeaderCollapsed((v) => !v)}
-                title={headerCollapsed ? '헤더 펼치기' : '헤더 접기'}
-                className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-white/5 border border-white/15 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/30 transition-all text-xs font-bold"
-              >
-                <motion.svg
-                  animate={{ rotate: headerCollapsed ? 180 : 0 }}
-                  transition={{ duration: 0.25 }}
-                  xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-                  fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+              {/* 헤더 접기/펼치기 버튼 — 접혀있는 동안 항상 강조 */}
+              <div className="relative">
+                {headerCollapsed && (
+                  <span className="absolute inset-0 rounded-xl bg-blue-400/40 animate-ping pointer-events-none" />
+                )}
+                <button
+                  onClick={() => setHeaderCollapsed((v) => !v)}
+                  title={headerCollapsed ? '헤더 펼치기' : '헤더 접기'}
+                  className={`relative flex items-center gap-1 px-2.5 py-2 rounded-xl border transition-all text-xs font-bold ${
+                    headerCollapsed
+                      ? 'bg-blue-500/30 border-blue-400/70 text-blue-300 shadow-lg shadow-blue-500/30'
+                      : 'bg-white/5 border-white/15 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/30'
+                  }`}
                 >
-                  <polyline points="18 15 12 9 6 15" />
-                </motion.svg>
-                <span className="hidden sm:inline">{headerCollapsed ? '펼치기' : '접기'}</span>
-              </button>
+                  <motion.svg
+                    animate={{ rotate: headerCollapsed ? 180 : 0 }}
+                    transition={{ duration: 0.25 }}
+                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <polyline points="18 15 12 9 6 15" />
+                  </motion.svg>
+                  <span className="hidden sm:inline">{headerCollapsed ? '펼치기' : '접기'}</span>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -188,8 +206,11 @@ export default function Dashboard() {
                 className="overflow-hidden"
               >
                 <div className="flex items-center justify-between gap-2 py-1">
-                  <span className="text-xs text-white/40 truncate">
-                    📍 {regionLabel || '계양구 전체'} · <span className="text-blue-400 font-bold">{activeYear}년</span>
+                  <span className="text-sm font-semibold text-white/70 truncate">
+                    📍 {regionLabel || '계양구 전체'} · <span className="text-blue-400">{activeYear}년</span>
+                    {activeTab === 'dongCompare' && regionLabel && (
+                      <span className="text-white/40 font-normal"> 각동의 수치 연도별 비교</span>
+                    )}
                   </span>
                   <div className="flex items-center gap-2">
                     <button

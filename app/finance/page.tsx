@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Legend, BarChart, Bar,
@@ -100,6 +100,17 @@ export default function FinancePage() {
   const [selectedYear, setSelectedYear] = useState(YEARS[0]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [headerCollapsed, setHeaderCollapsed] = useState(true);
+
+  // 자동 재생 (페이지 로드 후 2.5초 뒤 시작)
+  useEffect(() => {
+    const autoStart = setTimeout(() => {
+      setSelectedYear(YEARS[0]);
+      setIsPlaying(true);
+    }, 2500);
+    return () => clearTimeout(autoStart);
+  }, []);
+
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -161,84 +172,140 @@ export default function FinancePage() {
       <div className="sticky top-0 z-30 bg-[#0B0F1A]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 flex flex-col gap-3">
 
-          {/* 타이틀 + 이동버튼 */}
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-black tracking-tight">
+          {/* 타이틀 + 이동버튼 + 접기 */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h1 className="text-lg md:text-3xl font-black tracking-tight leading-tight">
                 인천 3개구 재정지표 비교
                 <span className="text-emerald-400"> 2010–2025</span>
               </h1>
-              <p className="text-xs text-white/40 mt-0.5">계양구 · 부평구 · 서구 · 재정자립도 · 재정자주도 · 사회복지비 비중</p>
+              <p className="text-xs text-white/40 mt-0.5 hidden md:block">계양구 · 부평구 · 서구 · 재정자립도 · 재정자주도 · 사회복지비 비중</p>
             </div>
-            <Link
-              href="/"
-              className="shrink-0 px-5 py-3 rounded-2xl bg-blue-500/15 border border-blue-500/40 text-sm text-blue-400 hover:bg-blue-500/30 hover:border-blue-400 transition-all font-bold shadow-lg shadow-blue-500/10 flex items-center gap-2"
-            >
-              <span className="text-blue-300">←</span> <span>인구현황</span> 👥
-            </Link>
-          </div>
-
-          {/* 재생 버튼 + 연도 선택 */}
-          <div className="flex items-center gap-3 flex-wrap">
-            {/* 재생/정지 버튼 */}
-            <button
-              onClick={handleTogglePlay}
-              className={`relative w-12 h-12 rounded-2xl flex items-center justify-center font-black transition-all shrink-0 border ${
-                isPlaying
-                  ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/40'
-                  : 'bg-white/5 border-white/20 text-white/80 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-400'
-              }`}
-              title={isPlaying ? '정지' : '재생'}
-            >
-              {isPlaying
-                ? <span className="flex gap-0.5"><span className="w-1 h-4 bg-white rounded-sm" /><span className="w-1 h-4 bg-white rounded-sm" /></span>
-                : <svg viewBox="0 0 16 16" className="w-5 h-5 ml-0.5" fill="currentColor"><polygon points="3,1 15,8 3,15" /></svg>
-              }
-            </button>
-
-            {/* 연도 버튼 */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {YEARS.map(y => (
+            <div className="flex items-center gap-1.5 shrink-0">
+              <Link
+                href="/"
+                className="px-3 md:px-5 py-2 md:py-3 rounded-xl md:rounded-2xl bg-blue-500/15 border border-blue-500/40 text-xs md:text-sm text-blue-400 hover:bg-blue-500/30 hover:border-blue-400 transition-all font-bold flex items-center gap-1.5"
+              >
+                <span className="text-blue-300">←</span> <span>인구현황</span>
+              </Link>
+              {/* 헤더 접기/펼치기 — 접혀있는 동안 항상 강조 */}
+              <div className="relative">
+                {headerCollapsed && (
+                  <span className="absolute inset-0 rounded-xl bg-emerald-400/40 animate-ping pointer-events-none" />
+                )}
                 <button
-                  key={y}
-                  onClick={() => { setIsPlaying(false); setSelectedYear(y); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                    selectedYear === y
-                      ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105'
-                      : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'
+                  onClick={() => setHeaderCollapsed(v => !v)}
+                  title={headerCollapsed ? '헤더 펼치기' : '헤더 접기'}
+                  className={`relative flex items-center gap-1 px-2.5 py-2 rounded-xl border transition-all text-xs font-bold ${
+                    headerCollapsed
+                      ? 'bg-emerald-500/30 border-emerald-400/70 text-emerald-300 shadow-lg shadow-emerald-500/30'
+                      : 'bg-white/5 border-white/15 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/30'
                   }`}
                 >
-                  {y}
+                  <motion.svg
+                    animate={{ rotate: headerCollapsed ? 180 : 0 }}
+                    transition={{ duration: 0.25 }}
+                    xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                    fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  >
+                    <polyline points="18 15 12 9 6 15" />
+                  </motion.svg>
+                  <span className="hidden sm:inline">{headerCollapsed ? '펼치기' : '접기'}</span>
                 </button>
-              ))}
+              </div>
             </div>
-
-            {/* 현재 연도 표시 */}
-            <span className="ml-auto text-2xl font-black text-emerald-400 tabular-nums shrink-0">
-              {selectedYear}
-            </span>
           </div>
+
+          {/* 접혔을 때 요약 바 */}
+          <AnimatePresence initial={false}>
+            {headerCollapsed && (
+              <motion.div
+                key="collapsed-bar"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center justify-between gap-2 py-1">
+                  <span className="text-sm font-semibold text-white/70">
+                    📊 재정지표 비교 · <span className="text-emerald-400">{selectedYear}년</span>
+                  </span>
+                  <button
+                    onClick={handleTogglePlay}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                      isPlaying
+                        ? 'bg-orange-500/20 border-orange-400/50 text-orange-300'
+                        : 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
+                    }`}
+                  >
+                    {isPlaying ? '⏸ 정지' : '▶ 재생'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* 재생 버튼 + 연도 선택 — 접기 가능 */}
+          <AnimatePresence initial={false}>
+            {!headerCollapsed && (
+              <motion.div
+                key="header-controls"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center gap-3 flex-wrap">
+                  {/* 재생/정지 버튼 */}
+                  <button
+                    onClick={handleTogglePlay}
+                    className={`relative w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center font-black transition-all shrink-0 border ${
+                      isPlaying
+                        ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/40'
+                        : 'bg-white/5 border-white/20 text-white/80 hover:bg-emerald-500/20 hover:border-emerald-500/50 hover:text-emerald-400'
+                    }`}
+                    title={isPlaying ? '정지' : '재생'}
+                  >
+                    {isPlaying
+                      ? <span className="flex gap-0.5"><span className="w-1 h-4 bg-white rounded-sm" /><span className="w-1 h-4 bg-white rounded-sm" /></span>
+                      : <svg viewBox="0 0 16 16" className="w-4 h-4 ml-0.5" fill="currentColor"><polygon points="3,1 15,8 3,15" /></svg>
+                    }
+                  </button>
+
+                  {/* 연도 버튼 */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {YEARS.map(y => (
+                      <button
+                        key={y}
+                        onClick={() => { setIsPlaying(false); setSelectedYear(y); }}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                          selectedYear === y
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-105'
+                            : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white/80'
+                        }`}
+                      >
+                        {y}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 현재 연도 표시 */}
+                  <span className="ml-auto text-2xl font-black text-emerald-400 tabular-nums shrink-0">
+                    {selectedYear}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
 
-        {/* ── 범례 ── */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-6"
-        >
-          {REGIONS.map(r => (
-            <div key={r} className="flex items-center gap-2">
-              <div className="w-4 h-1.5 rounded-full" style={{ background: REGION_COLORS[r] }} />
-              <span className="text-sm font-semibold" style={{ color: REGION_COLORS[r] }}>{r}</span>
-            </div>
-          ))}
-        </motion.div>
-
         {/* ── KPI 순위 카드 (선택 연도) ── */}
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <h2 className="text-sm font-semibold text-white/60 mb-3">📊 {selectedYear}년 지표 순위</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {METRICS.map(m => (
               <KpiBlock
@@ -257,19 +324,54 @@ export default function FinancePage() {
         {/* ── 레이더 차트 ── */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-            <h2 className="text-sm font-semibold text-white/70 mb-1">🕸️ {selectedYear}년 종합 비교 (레이더)</h2>
-            <p className="text-xs text-white/30 mb-4">각 지표를 최댓값 기준으로 정규화한 상대적 비교 — 면적이 넓을수록 해당 구의 재정이 강합니다</p>
-            <ResponsiveContainer width="100%" height={300}>
-              <RadarChart data={radarData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-                <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 600 }} />
-                <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
-                {REGIONS.map(r => (
-                  <Radar key={r} name={r} dataKey={r} stroke={REGION_COLORS[r]} fill={REGION_COLORS[r]} fillOpacity={0.15} strokeWidth={2} />
-                ))}
-                <Legend formatter={(v) => <span style={{ color: REGION_COLORS[v] }}>{v}</span>} />
-              </RadarChart>
-            </ResponsiveContainer>
+            {/* 좌우 2분할 */}
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center">
+              {/* 좌측: 레이더 차트 */}
+              <div className="w-full md:w-1/2 shrink-0">
+                <ResponsiveContainer width="100%" height={260}>
+                  <RadarChart data={radarData} margin={{ top: 10, right: 20, bottom: 10, left: 20 }}>
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis dataKey="metric" tick={{ fill: 'rgba(255,255,255,0.6)', fontSize: 11, fontWeight: 600 }} />
+                    <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 9 }} />
+                    {REGIONS.map(r => (
+                      <Radar key={r} name={r} dataKey={r} stroke={REGION_COLORS[r]} fill={REGION_COLORS[r]} fillOpacity={0.15} strokeWidth={2} />
+                    ))}
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              {/* 우측: 제목 + 설명 + 범례 */}
+              <div className="w-full md:w-1/2 flex flex-col gap-4 justify-center">
+                <div>
+                  <h2 className="text-base font-bold text-white/85">🕸️ {selectedYear}년 종합 비교</h2>
+                  <p className="text-xs text-white/35 mt-1 leading-relaxed">
+                    각 지표를 최댓값 기준으로 정규화한 상대적 비교 —<br />
+                    <span className="text-white/50">면적이 넓을수록 해당 구의 재정이 강합니다</span>
+                  </p>
+                </div>
+                {/* 범례 */}
+                <div className="flex flex-col gap-2">
+                  {REGIONS.map(r => {
+                    const row = yearRows.find(d => d.region === r);
+                    return (
+                      <div key={r} className="flex items-center gap-3 px-3 py-2 rounded-xl" style={{ background: `${REGION_COLORS[r]}10`, border: `1px solid ${REGION_COLORS[r]}25` }}>
+                        <div className="w-3 h-3 rounded-full shrink-0" style={{ background: REGION_COLORS[r] }} />
+                        <span className="text-sm font-bold w-14 shrink-0" style={{ color: REGION_COLORS[r] }}>{r}</span>
+                        {row && (
+                          <span className="text-xs text-white/40">
+                            세입 <span className="text-white/65 font-semibold">{row.revenue}천원</span>
+                            {' · '}자립 <span className="text-white/65 font-semibold">{row.selfRate}%</span>
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-white/20 leading-relaxed">
+                  ※ 레이더 수치는 전체 연도·전체 구 기준 최댓값 대비 상대값(%)
+                </p>
+              </div>
+            </div>
             {/* 종합 총평 */}
             <div className="mt-4 rounded-xl border border-white/10 overflow-hidden text-xs leading-relaxed">
               {/* 접기/펴기 헤더 */}

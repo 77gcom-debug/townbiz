@@ -54,15 +54,28 @@ export default function TotalPopChart({ activeYear, data }: Props) {
     <div className="flex flex-col gap-3">
       {/* ── 큰 숫자 오버레이 ── */}
       <div className="flex items-stretch justify-between gap-3">
-        {/* 현재 인구 */}
-        <div className="flex flex-col justify-center">
-          <AnimatedNumber
-            value={currentTotal}
-            suffix="명"
-            duration={0.7}
-            className="text-2xl md:text-3xl font-black text-white tabular-nums leading-none"
-          />
-          <span className="text-[11px] text-white/35 mt-1">{activeYear}년 총 인구</span>
+        {/* 현재 인구 + 연도 */}
+        <div className="flex flex-col justify-center gap-1">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={activeYear}
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.3 }}
+              className="text-4xl md:text-5xl font-black tabular-nums leading-none text-blue-400/80 tracking-tight"
+            >
+              {activeYear}
+            </motion.span>
+          </AnimatePresence>
+          <div className="flex items-baseline gap-1">
+            <AnimatedNumber
+              value={currentTotal}
+              suffix="명"
+              duration={0.7}
+              className="text-xl md:text-2xl font-black text-white tabular-nums leading-none"
+            />
+          </div>
         </div>
 
         {/* 감소/증가 강조 블록 */}
