@@ -2,9 +2,9 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ComposedChart, Area, Line,
+  ComposedChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, ReferenceLine,
+  ResponsiveContainer,
 } from 'recharts';
 import { ALL_REGION_DATA, REGIONS, getYouthPop, getElderlyPop } from '@/lib/allRegions';
 import { POPULATION_DATA } from '@/lib/data';
@@ -75,8 +75,10 @@ interface Props {
 export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
   const dongLabels = selectedDongs.map(k => REGIONS.find(r => r.key === k)?.label ?? k);
 
-  // 전체 연도 데이터 구성
-  const chartData = YEARS.map(year => {
+  // activeYear까지만 데이터 구성 (인구현황처럼 차트가 성장하는 효과)
+  const visibleYears = activeYear ? YEARS.filter(y => y <= activeYear) : YEARS;
+
+  const buildRow = (year: number) => {
     const row: Record<string, any> = { year };
     selectedDongs.forEach(key => {
       const label = REGIONS.find(r => r.key === key)?.label ?? key;
@@ -89,11 +91,13 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
       }
     });
     return row;
-  });
+  };
 
-  // activeYear 기준 각 동의 현재값
-  const currentRow = activeYear ? chartData.find(r => r.year === activeYear) : null;
-  const baseRow = chartData.find(r => r.year === YEARS[0]);
+  const chartData = visibleYears.map(buildRow);
+
+  // activeYear 기준 현재값 / 기준값
+  const currentRow = chartData[chartData.length - 1] ?? null;
+  const baseRow = buildRow(YEARS[0]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -212,41 +216,23 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                     />
                     <Tooltip content={<CustomTooltip unit={m.unit} />} />
 
-                    {/* 선택 연도 기준선 */}
-                    {activeYear && (
-                      <ReferenceLine
-                        x={activeYear}
-                        stroke="rgba(255,255,255,0.4)"
-                        strokeDasharray="4 3"
-                        strokeWidth={1.5}
-                        label={{
-                          value: `${activeYear}년`,
-                          position: 'top',
-                          fill: 'rgba(255,255,255,0.55)',
-                          fontSize: 9,
-                        }}
-                      />
-                    )}
-
-                    {/* 동별 Area + Line */}
+                    {/* 동별 Area — activeYear까지만 데이터가 쌓이는 구조 */}
                     {dongLabels.map((label, i) => (
-                      <>
-                        <Area
-                          key={`area_${label}`}
-                          type="monotone"
-                          dataKey={`${label}_${m.key}`}
-                          name={label}
-                          stroke={DONG_COLORS[i]}
-                          strokeWidth={2}
-                          fill={`url(#grad_${m.key}_${i})`}
-                          dot={false}
-                          activeDot={{ r: 5, fill: '#fff', stroke: DONG_COLORS[i], strokeWidth: 2 }}
-                          isAnimationActive
-                          animationDuration={700}
-                          animationEasing="ease-out"
-                          connectNulls
-                        />
-                      </>
+                      <Area
+                        key={`area_${label}_${m.key}`}
+                        type="monotone"
+                        dataKey={`${label}_${m.key}`}
+                        name={label}
+                        stroke={DONG_COLORS[i]}
+                        strokeWidth={2.5}
+                        fill={`url(#grad_${m.key}_${i})`}
+                        dot={{ r: 2.5, fill: DONG_COLORS[i], strokeWidth: 0 }}
+                        activeDot={{ r: 6, fill: '#fff', stroke: DONG_COLORS[i], strokeWidth: 2 }}
+                        isAnimationActive
+                        animationDuration={500}
+                        animationEasing="ease-out"
+                        connectNulls
+                      />
                     ))}
 
                     {/* 범례를 직접 렌더링 (하단) */}
