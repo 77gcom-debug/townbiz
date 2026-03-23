@@ -31,30 +31,37 @@ export default function KpiCard({
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay }}
-      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-5 flex flex-col gap-2"
+      className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-4 flex flex-col gap-1.5"
     >
       <span className="text-xs font-medium tracking-widest uppercase text-white/50">{label}</span>
-      <div className="flex items-end gap-1">
+      {/* 메인 수치 — 줄바꿈 방지 */}
+      <div className="flex items-end gap-1 overflow-hidden">
         <AnimatedNumber
           value={value}
           decimals={decimals}
           suffix={unit}
-          className="text-3xl font-bold"
-          duration={1.4}
+          className="text-2xl md:text-3xl font-bold tabular-nums whitespace-nowrap"
+          duration={0.75}
         />
       </div>
-      {diff !== undefined && (
-        <div className={`flex items-center gap-1 text-sm font-semibold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-          <span>{isPositive ? '▲' : '▼'}</span>
-          <AnimatedNumber
-            value={Math.abs(diff)}
-            decimals={decimals}
-            suffix={unit}
-            duration={1.4}
-          />
-          <span className="text-white/40 font-normal ml-1">{diffLabel}</span>
-        </div>
-      )}
+      {/* diff 행 — 고정 높이로 레이아웃 안정화 */}
+      <div className="h-5 flex items-center gap-1 text-xs font-semibold overflow-hidden">
+        {diff !== undefined && (
+          <>
+            <span className={isPositive ? 'text-emerald-400' : 'text-rose-400'}>
+              {isPositive ? '▲' : '▼'}
+            </span>
+            <AnimatedNumber
+              value={Math.abs(diff)}
+              decimals={decimals}
+              suffix={unit}
+              duration={0.75}
+              className={`tabular-nums whitespace-nowrap ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}
+            />
+            <span className="text-white/40 font-normal ml-0.5 whitespace-nowrap">{diffLabel}</span>
+          </>
+        )}
+      </div>
     </motion.div>
   );
 }
