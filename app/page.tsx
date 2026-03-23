@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [regionKey, setRegionKey]   = useState('district');
   const [multiKeys, setMultiKeys]   = useState<string[]>([]);
   const [activeTab, setActiveTab]   = useState<'population' | 'dongCompare'>('population');
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
   // 멀티셀렉트 vs 단일 선택
   const isMulti = multiKeys.length > 0;
@@ -118,11 +119,11 @@ export default function Dashboard() {
       <div className="sticky top-0 z-30 bg-[#0B0F1A]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 flex flex-col gap-3">
 
-          {/* 타이틀 + 탭 + 재정비교 버튼 */}
-          <div className="flex items-center justify-between gap-4">
+          {/* 타이틀 + 탭 + 재정비교 + 접기 버튼 */}
+          <div className="flex items-center justify-between gap-2">
             <motion.h1
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="text-xl md:text-2xl font-black tracking-tight leading-tight shrink-0"
+              className="text-lg md:text-2xl font-black tracking-tight leading-tight shrink-0"
             >
               계양구 인구현황
               <span className="text-blue-400"> 2010–2025</span>
@@ -132,7 +133,7 @@ export default function Dashboard() {
             <div className="flex items-center gap-1 flex-1 justify-center">
               <button
                 onClick={() => setActiveTab('population')}
-                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
+                className={`px-3 md:px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all border ${
                   activeTab === 'population'
                     ? 'bg-blue-500/25 border-blue-400/60 text-blue-300 shadow-md shadow-blue-500/20'
                     : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
@@ -142,7 +143,7 @@ export default function Dashboard() {
               </button>
               <button
                 onClick={() => setActiveTab('dongCompare')}
-                className={`px-5 py-2 rounded-xl text-sm font-bold transition-all border ${
+                className={`px-3 md:px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all border ${
                   activeTab === 'dongCompare'
                     ? 'bg-indigo-500/25 border-indigo-400/60 text-indigo-300 shadow-md shadow-indigo-500/20'
                     : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
@@ -152,32 +153,99 @@ export default function Dashboard() {
               </button>
             </div>
 
-            <a href="/finance" className="shrink-0 px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold flex items-center gap-1.5">
-              💰 재정비교
-            </a>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <a href="/finance" className="hidden md:flex px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold items-center gap-1.5">
+                💰 재정비교
+              </a>
+              {/* 헤더 접기/펼치기 버튼 */}
+              <button
+                onClick={() => setHeaderCollapsed((v) => !v)}
+                title={headerCollapsed ? '헤더 펼치기' : '헤더 접기'}
+                className="flex items-center gap-1 px-2.5 py-2 rounded-xl bg-white/5 border border-white/15 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/30 transition-all text-xs font-bold"
+              >
+                <motion.svg
+                  animate={{ rotate: headerCollapsed ? 180 : 0 }}
+                  transition={{ duration: 0.25 }}
+                  xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                >
+                  <polyline points="18 15 12 9 6 15" />
+                </motion.svg>
+                <span className="hidden sm:inline">{headerCollapsed ? '펼치기' : '접기'}</span>
+              </button>
+            </div>
           </div>
 
-          {/* 공통 지역 선택 (항상 표시) */}
-          <RegionSelector
-            selectedKey={regionKey}
-            onChange={(k) => { setRegionKey(k); setMultiKeys([]); }}
-            multiKeys={multiKeys}
-            onMultiChange={setMultiKeys}
-            mode={activeTab === 'dongCompare' ? 'compare' : 'merge'}
-            maxSelect={4}
-            hint={activeTab === 'population'
-              ? '▶ 재생 버튼으로 연도별 변화를 확인하고, 최대 4개 동을 합산해 비교합니다'
-              : '동을 선택하면 아래에 비교 차트가 나타납니다 (최대 4개)'
-            }
-          />
+          {/* 접혔을 때 표시할 현재 상태 요약 바 */}
+          <AnimatePresence initial={false}>
+            {headerCollapsed && (
+              <motion.div
+                key="collapsed-bar"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="flex items-center justify-between gap-2 py-1">
+                  <span className="text-xs text-white/40 truncate">
+                    📍 {regionLabel || '계양구 전체'} · <span className="text-blue-400 font-bold">{activeYear}년</span>
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleTogglePlay}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold border transition-all ${
+                        isPlaying
+                          ? 'bg-orange-500/20 border-orange-400/50 text-orange-300'
+                          : 'bg-blue-500/20 border-blue-400/50 text-blue-300'
+                      }`}
+                    >
+                      {isPlaying ? '⏸ 정지' : '▶ 재생'}
+                    </button>
+                    <a href="/finance" className="md:hidden px-3 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-xs text-emerald-400 font-bold">
+                      💰
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* 타임라인 슬라이더 - 공통 */}
-          <TimelineSlider
-            activeYear={activeYear}
-            isPlaying={isPlaying}
-            onYearChange={setActiveYear}
-            onTogglePlay={handleTogglePlay}
-          />
+          {/* 지역 선택 + 타임라인 — 접기 가능 */}
+          <AnimatePresence initial={false}>
+            {!headerCollapsed && (
+              <motion.div
+                key="header-controls"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+                className="overflow-hidden flex flex-col gap-3"
+              >
+                {/* 공통 지역 선택 */}
+                <RegionSelector
+                  selectedKey={regionKey}
+                  onChange={(k) => { setRegionKey(k); setMultiKeys([]); }}
+                  multiKeys={multiKeys}
+                  onMultiChange={setMultiKeys}
+                  mode={activeTab === 'dongCompare' ? 'compare' : 'merge'}
+                  maxSelect={4}
+                  hint={activeTab === 'population'
+                    ? '▶ 재생 버튼으로 연도별 변화를 확인하고, 최대 4개 동을 합산해 비교합니다'
+                    : '동을 선택하면 아래에 비교 차트가 나타납니다 (최대 4개)'
+                  }
+                />
+
+                {/* 타임라인 슬라이더 - 공통 */}
+                <TimelineSlider
+                  activeYear={activeYear}
+                  isPlaying={isPlaying}
+                  onYearChange={setActiveYear}
+                  onTogglePlay={handleTogglePlay}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
