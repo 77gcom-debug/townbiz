@@ -1,25 +1,53 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend, ReferenceLine,
+  ComposedChart, Area, Line,
+  XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, ReferenceLine,
 } from 'recharts';
 import { ALL_REGION_DATA, REGIONS, getYouthPop, getElderlyPop } from '@/lib/allRegions';
 import { POPULATION_DATA } from '@/lib/data';
+import AnimatedNumber from './AnimatedNumber';
 
 const YEARS = POPULATION_DATA.map(d => d.year);
 
 const DONG_COLORS = [
   '#6366f1', '#FF9F43', '#1DD1A1', '#FF6B6B',
-  '#48DBFB', '#FECA57', '#C8D6E5', '#ff9ff3',
+];
+const DONG_COLORS_DARK = [
+  '#6366f133', '#FF9F4333', '#1DD1A133', '#FF6B6B33',
 ];
 
 const METRICS = [
-  { key: 'total',    label: '총 인구',    unit: '명',  fmt: (v: number) => v >= 10000 ? `${(v/10000).toFixed(1)}만` : v.toLocaleString() },
-  { key: 'youth',    label: '유소년 인구', unit: '명',  fmt: (v: number) => v.toLocaleString() },
-  { key: 'elderly',  label: '고령 인구',  unit: '명',  fmt: (v: number) => v.toLocaleString() },
-  { key: 'avgAge',   label: '평균연령',   unit: '세',  fmt: (v: number) => `${v.toFixed(1)}` },
+  {
+    key: 'total',
+    label: '총 인구',
+    unit: '명',
+    fmt: (v: number) => v >= 10000 ? `${(v / 10000).toFixed(1)}만` : v.toLocaleString(),
+    suffix: '명',
+  },
+  {
+    key: 'youth',
+    label: '유소년 인구',
+    unit: '명',
+    fmt: (v: number) => v.toLocaleString(),
+    suffix: '명',
+  },
+  {
+    key: 'elderly',
+    label: '고령 인구',
+    unit: '명',
+    fmt: (v: number) => v.toLocaleString(),
+    suffix: '명',
+  },
+  {
+    key: 'avgAge',
+    label: '평균연령',
+    unit: '세',
+    fmt: (v: number) => `${v.toFixed(1)}`,
+    suffix: '세',
+  },
 ];
 
 function CustomTooltip({ active, payload, label, unit }: any) {
@@ -30,7 +58,9 @@ function CustomTooltip({ active, payload, label, unit }: any) {
       {payload.map((p: any) => (
         <div key={p.name} className="flex justify-between gap-4" style={{ color: p.color }}>
           <span>{p.name}</span>
-          <span className="font-semibold text-white tabular-nums">{p.value?.toLocaleString()}{unit}</span>
+          <span className="font-semibold text-white tabular-nums">
+            {typeof p.value === 'number' ? p.value.toLocaleString() : p.value}{unit}
+          </span>
         </div>
       ))}
     </div>
@@ -43,7 +73,9 @@ interface Props {
 }
 
 export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
-  // 차트 데이터 구성
+  const dongLabels = selectedDongs.map(k => REGIONS.find(r => r.key === k)?.label ?? k);
+
+  // 전체 연도 데이터 구성
   const chartData = YEARS.map(year => {
     const row: Record<string, any> = { year };
     selectedDongs.forEach(key => {
@@ -59,21 +91,23 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
     return row;
   });
 
-  const dongLabels = selectedDongs.map(k => REGIONS.find(r => r.key === k)?.label ?? k);
+  // activeYear 기준 각 동의 현재값
+  const currentRow = activeYear ? chartData.find(r => r.year === activeYear) : null;
+  const baseRow = chartData.find(r => r.year === YEARS[0]);
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-2xl p-5 flex flex-col gap-4">
+    <div className="flex flex-col gap-6">
       {/* 헤더 */}
       <div>
         <h2 className="text-sm font-semibold text-white/80">🏘 동별 비교</h2>
         <p className="text-xs text-white/35 mt-0.5">
           {selectedDongs.length > 0
-            ? `선택된 동: ${selectedDongs.map(k => REGIONS.find(r => r.key === k)?.label).join(' · ')} · 합산이 아닌 각 동의 수치를 동시에 비교합니다`
+            ? `${dongLabels.join(' · ')} · 각 동의 수치를 연도별로 비교합니다`
             : '위 지역 선택에서 동을 체크하면 비교 차트가 나타납니다 (최대 4개)'}
         </p>
       </div>
 
-      {/* 선택 안 했을 때 안내 */}
+      {/* 선택 없을 때 */}
       {selectedDongs.length === 0 && (
         <div className="flex flex-col items-center justify-center h-48 gap-3 text-white/20">
           <span className="text-4xl">☝️</span>
@@ -81,59 +115,165 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
         </div>
       )}
 
-      {/* 차트 4개 */}
       {selectedDongs.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {METRICS.map(m => (
+        <>
+          {/* ── KPI 카드: 선택된 동별 현재 수치 ── */}
+          <AnimatePresence mode="popLayout">
             <motion.div
-              key={m.key}
-              initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-              className="bg-black/20 rounded-xl p-4"
+              key={selectedDongs.join(',')}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="grid gap-3"
+              style={{ gridTemplateColumns: `repeat(${selectedDongs.length}, minmax(0, 1fr))` }}
             >
-              <p className="text-xs font-semibold text-white/60 mb-3">{m.label} ({m.unit})</p>
-              <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={chartData} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                  <XAxis dataKey="year" tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }} axisLine={false} tickLine={false} />
-                  <YAxis
-                    tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
-                    axisLine={false} tickLine={false} width={40}
-                    tickFormatter={m.fmt}
-                  />
-                  <Tooltip content={<CustomTooltip unit={m.unit} />} />
-                  {activeYear && (
-                    <ReferenceLine
-                      x={activeYear}
-                      stroke="rgba(255,255,255,0.5)"
-                      strokeDasharray="4 3"
-                      strokeWidth={1.5}
-                      label={{ value: `${activeYear}년`, position: 'top', fill: 'rgba(255,255,255,0.6)', fontSize: 9 }}
-                    />
-                  )}
-                  {dongLabels.map((label, i) => (
-                    <Line
-                      key={label}
-                      type="monotone"
-                      dataKey={`${label}_${m.key}`}
-                      name={label}
-                      stroke={DONG_COLORS[i]}
-                      strokeWidth={2}
-                      dot={{ r: 2.5, fill: DONG_COLORS[i], strokeWidth: 0 }}
-                      activeDot={{ r: 5, fill: '#fff', stroke: DONG_COLORS[i], strokeWidth: 2 }}
-                      connectNulls
-                    />
-                  ))}
-                  <Legend
-                    formatter={(v) => {
-                      const i = dongLabels.indexOf(v);
-                      return <span style={{ color: DONG_COLORS[i], fontSize: 10 }}>{v}</span>;
+              {selectedDongs.map((key, i) => {
+                const label = dongLabels[i];
+                const color = DONG_COLORS[i];
+                const cur = currentRow ?? {};
+                const base = baseRow ?? {};
+                const total = cur[`${label}_total`] ?? 0;
+                const baseTotal = base[`${label}_total`] ?? 0;
+                const diff = total - baseTotal;
+                const rate = baseTotal > 0 ? ((total / baseTotal - 1) * 100) : 0;
+                const isDown = diff < 0;
+
+                return (
+                  <motion.div
+                    key={key}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.07 }}
+                    className="rounded-2xl p-4 border flex flex-col gap-1.5"
+                    style={{
+                      background: `${color}0d`,
+                      borderColor: `${color}33`,
                     }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+                  >
+                    {/* 동 이름 */}
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+                      <span className="text-xs font-bold" style={{ color }}>{label}</span>
+                    </div>
+                    {/* 총인구 */}
+                    <AnimatedNumber
+                      value={total}
+                      suffix="명"
+                      duration={0.8}
+                      className="text-xl md:text-2xl font-black text-white tabular-nums leading-none"
+                    />
+                    {/* 증감 */}
+                    {diff !== 0 && (
+                      <div className={`flex items-center gap-1 text-xs font-semibold ${isDown ? 'text-rose-400' : 'text-emerald-400'}`}>
+                        <span>{isDown ? '▼' : '▲'}</span>
+                        <AnimatedNumber value={Math.abs(diff)} suffix="명" duration={0.8} />
+                        <span className="font-normal text-white/30 ml-0.5">
+                          ({isDown ? '−' : '+'}<AnimatedNumber value={Math.abs(rate)} decimals={1} suffix="%" duration={0.8} />)
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-[10px] text-white/25">{YEARS[0]}년 대비 · {activeYear}년</span>
+                  </motion.div>
+                );
+              })}
             </motion.div>
-          ))}
-        </div>
+          </AnimatePresence>
+
+          {/* ── AreaChart 4개 ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {METRICS.map((m, mi) => (
+              <motion.div
+                key={m.key}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + mi * 0.08 }}
+                className="bg-black/20 rounded-2xl p-4"
+              >
+                <p className="text-xs font-semibold text-white/60 mb-3">{m.label} ({m.unit})</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                    <defs>
+                      {selectedDongs.map((_, i) => (
+                        <linearGradient key={i} id={`grad_${m.key}_${i}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%"  stopColor={DONG_COLORS[i]} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={DONG_COLORS[i]} stopOpacity={0} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis
+                      dataKey="year"
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
+                      axisLine={false} tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
+                      axisLine={false} tickLine={false} width={42}
+                      tickFormatter={m.fmt}
+                    />
+                    <Tooltip content={<CustomTooltip unit={m.unit} />} />
+
+                    {/* 선택 연도 기준선 */}
+                    {activeYear && (
+                      <ReferenceLine
+                        x={activeYear}
+                        stroke="rgba(255,255,255,0.4)"
+                        strokeDasharray="4 3"
+                        strokeWidth={1.5}
+                        label={{
+                          value: `${activeYear}년`,
+                          position: 'top',
+                          fill: 'rgba(255,255,255,0.55)',
+                          fontSize: 9,
+                        }}
+                      />
+                    )}
+
+                    {/* 동별 Area + Line */}
+                    {dongLabels.map((label, i) => (
+                      <>
+                        <Area
+                          key={`area_${label}`}
+                          type="monotone"
+                          dataKey={`${label}_${m.key}`}
+                          name={label}
+                          stroke={DONG_COLORS[i]}
+                          strokeWidth={2}
+                          fill={`url(#grad_${m.key}_${i})`}
+                          dot={false}
+                          activeDot={{ r: 5, fill: '#fff', stroke: DONG_COLORS[i], strokeWidth: 2 }}
+                          isAnimationActive
+                          animationDuration={700}
+                          animationEasing="ease-out"
+                          connectNulls
+                        />
+                      </>
+                    ))}
+
+                    {/* 범례를 직접 렌더링 (하단) */}
+                  </ComposedChart>
+                </ResponsiveContainer>
+
+                {/* 커스텀 범례 */}
+                <div className="flex flex-wrap gap-3 mt-2">
+                  {dongLabels.map((label, i) => {
+                    const val = currentRow?.[`${label}_${m.key}`];
+                    return (
+                      <div key={label} className="flex items-center gap-1.5">
+                        <span className="w-3 h-0.5 rounded-full inline-block" style={{ background: DONG_COLORS[i] }} />
+                        <span className="text-[10px] font-semibold" style={{ color: DONG_COLORS[i] }}>{label}</span>
+                        {val != null && (
+                          <span className="text-[10px] text-white/50 tabular-nums">
+                            {m.fmt(val)}{m.unit}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );
