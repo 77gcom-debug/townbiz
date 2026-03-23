@@ -12,6 +12,7 @@ import {
   ReferenceLine,
   ReferenceDot,
 } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { YearData } from '@/lib/data';
 import { getYouthPop, getElderlyPop } from '@/lib/allRegions';
 
@@ -98,6 +99,36 @@ export default function YouthElderlyChart({ data, activeYear, regionLabel, type,
           {chartData[0]?.year}년 기준 {diff >= 0 ? '+' : ''}{diff.toLocaleString()}명 ({diff >= 0 ? '+' : ''}{diffRate}%)
         </span>
       </div>
+
+      {/* ── 역전 배지 (크게, 모바일 대응) ── */}
+      <AnimatePresence>
+        {showCrossover && crossoverYear && (
+          <motion.div
+            key="crossover-badge"
+            initial={{ opacity: 0, scale: 0.8, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="flex items-center gap-3 px-4 py-3 bg-yellow-400/10 border border-yellow-400/40 rounded-2xl"
+          >
+            <motion.span
+              animate={{ rotate: [0, -10, 10, -10, 0] }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="text-2xl"
+            >
+              ⚡
+            </motion.span>
+            <div className="flex flex-col leading-tight">
+              <span className="text-yellow-300 font-black text-lg md:text-2xl tracking-tight">
+                {crossoverYear}년 역전!
+              </span>
+              <span className="text-yellow-400/70 text-xs">
+                {isYouth ? '유소년 인구가 고령 인구보다 적어짐' : '고령 인구가 유소년 인구를 추월'}
+              </span>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>

@@ -194,10 +194,31 @@ export default function Dashboard() {
               <KpiCard label="고령 인구"     value={getElderlyPop(currentData)} diff={diffElderly} diffLabel={`${baseData.year}년 대비`} unit="명"  delay={0.21} />
             </div>
 
-            {/* ── 유소년 / 고령 인구 차트 ── */}
+            {/* ── 1순위: 총인구추이 + 평균연령추이 ── */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm font-semibold text-white/70 mb-1">📉 총 인구 추이</h2>
+                <p className="text-xs text-white/30 mb-3">
+                  {baseData.total.toLocaleString()}명 ({baseData.year}) → {currentData.total.toLocaleString()}명 ({activeYear})
+                </p>
+                <TotalPopChart activeYear={activeYear} data={regionData} />
+              </motion.div>
+
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+                className="bg-white/5 border border-white/10 rounded-2xl p-5">
+                <h2 className="text-sm font-semibold text-white/70 mb-1">📈 평균연령 추이</h2>
+                <p className="text-xs text-white/30 mb-3">
+                  {BASE_YEAR.avgAge}세 (2010) → {currentData.avgAge}세 ({activeYear}) · 막대: 전년대비 증가
+                </p>
+                <AvgAgeChart activeYear={activeYear} data={regionData} />
+              </motion.div>
+            </div>
+
+            {/* ── 2순위: 유소년 / 고령 인구 차트 ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <motion.div
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
                 className="bg-white/5 border border-white/10 rounded-2xl p-5"
               >
                 <h2 className="text-sm font-semibold text-white/70 mb-3">
@@ -208,7 +229,7 @@ export default function Dashboard() {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.37 }}
                 className="bg-white/5 border border-white/10 rounded-2xl p-5"
               >
                 <h2 className="text-sm font-semibold text-white/70 mb-3">
@@ -219,26 +240,8 @@ export default function Dashboard() {
               </motion.div>
             </div>
 
-            {/* ── 주요 차트 4개 ── */}
+            {/* ── 3순위: 연령구간별 인구 + 연령별 순위 ── */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                <h2 className="text-sm font-semibold text-white/70 mb-1">📉 총 인구 추이</h2>
-                <p className="text-xs text-white/30 mb-4">
-                  {baseData.total.toLocaleString()}명 ({baseData.year}) → {currentData.total.toLocaleString()}명 ({activeYear})
-                </p>
-                <TotalPopChart activeYear={activeYear} data={regionData} />
-              </motion.div>
-
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.37 }}
-                className="bg-white/5 border border-white/10 rounded-2xl p-5">
-                <h2 className="text-sm font-semibold text-white/70 mb-1">📈 평균연령 추이</h2>
-                <p className="text-xs text-white/30 mb-4">
-                  {BASE_YEAR.avgAge}세 (2010) → {currentData.avgAge}세 ({activeYear}) · 막대: 전년대비 증가
-                </p>
-                <AvgAgeChart activeYear={activeYear} data={regionData} />
-              </motion.div>
-
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.44 }}
                 className="bg-white/5 border border-white/10 rounded-2xl p-5">
                 <h2 className="text-sm font-semibold text-white/70 mb-1">🏗 연령구간별 인구 (누적)</h2>
