@@ -54,39 +54,30 @@ export default function TotalPopChart({ activeYear, data }: Props) {
     <div className="flex flex-col gap-3">
       {/* ── 큰 숫자 오버레이 ── */}
       <div className="flex items-stretch justify-between gap-3">
-        {/* 현재 인구 + 연도 */}
-        <div className="flex flex-col justify-center gap-1">
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={activeYear}
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.3 }}
-              className="text-4xl md:text-5xl font-black tabular-nums leading-none text-blue-400/80 tracking-tight"
-            >
-              {activeYear}
-            </motion.span>
-          </AnimatePresence>
-          <div className="flex items-baseline gap-1">
-            <AnimatedNumber
-              value={currentTotal}
-              suffix="명"
-              duration={0.7}
-              className="text-xl md:text-2xl font-black text-white tabular-nums leading-none"
-            />
-          </div>
+        {/* 현재 인구 + 연도 — 중앙 정렬 */}
+        <div className="flex-1 flex flex-col items-center justify-center gap-1">
+          <AnimatedNumber
+            value={activeYear}
+            duration={0.75}
+            className="text-4xl md:text-5xl font-black tabular-nums leading-none text-blue-400/80 tracking-tight"
+          />
+          <AnimatedNumber
+            value={currentTotal}
+            suffix="명"
+            duration={0.75}
+            className="text-xl md:text-2xl font-black text-white tabular-nums leading-none"
+          />
         </div>
 
         {/* 감소/증가 강조 블록 */}
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="sync">
           {activeYear > baseYear && (
             <motion.div
               key={`${activeYear}-stat`}
-              initial={{ opacity: 0, scale: 0.85, y: 6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.85 }}
-              transition={{ duration: 0.35 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
               className={`flex flex-col items-end justify-center px-4 py-2 rounded-2xl border ${
                 isDecrease
                   ? 'bg-rose-500/10 border-rose-500/30'
@@ -153,9 +144,7 @@ export default function TotalPopChart({ activeYear, data }: Props) {
             fill="url(#popGrad)"
             dot={{ fill: isDecrease ? '#FF6B6B' : '#54A0FF', r: 3, strokeWidth: 0 }}
             activeDot={{ r: 6, fill: '#fff', stroke: isDecrease ? '#FF6B6B' : '#54A0FF', strokeWidth: 2 }}
-            isAnimationActive={true}
-            animationDuration={600}
-            animationEasing="ease-out"
+            isAnimationActive={false}
           />
         </AreaChart>
       </ResponsiveContainer>
