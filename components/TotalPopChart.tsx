@@ -52,10 +52,11 @@ export default function TotalPopChart({ activeYear, data }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      {/* ── 큰 숫자 오버레이 ── */}
-      <div className="flex items-stretch justify-between gap-3">
-        {/* 현재 인구 + 연도 — 중앙 정렬 */}
-        <div className="flex-1 flex flex-col items-center justify-center gap-1">
+      {/* ── 큰 숫자 오버레이 — relative 컨테이너로 위치 고정 ── */}
+      <div className="relative flex items-center justify-center py-2 min-h-[80px]">
+
+        {/* 연도 + 인구 — 항상 정중앙 고정 */}
+        <div className="flex flex-col items-center gap-1">
           <AnimatedNumber
             value={activeYear}
             duration={0.75}
@@ -69,16 +70,16 @@ export default function TotalPopChart({ activeYear, data }: Props) {
           />
         </div>
 
-        {/* 감소/증가 강조 블록 */}
-        <AnimatePresence mode="sync">
+        {/* 감소/증가 강조 블록 — 우측에 absolute 배치 */}
+        <AnimatePresence>
           {activeYear > baseYear && (
             <motion.div
-              key={`${activeYear}-stat`}
+              key="stat"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className={`flex flex-col items-end justify-center px-4 py-2 rounded-2xl border ${
+              transition={{ duration: 0.3 }}
+              className={`absolute right-0 top-1/2 -translate-y-1/2 flex flex-col items-end justify-center px-3 py-2 rounded-2xl border ${
                 isDecrease
                   ? 'bg-rose-500/10 border-rose-500/30'
                   : 'bg-emerald-500/10 border-emerald-500/30'
@@ -91,7 +92,7 @@ export default function TotalPopChart({ activeYear, data }: Props) {
                   value={Math.abs(diff)}
                   suffix="명"
                   duration={0.7}
-                  className="text-xl md:text-2xl font-black tabular-nums leading-none"
+                  className="text-lg md:text-2xl font-black tabular-nums leading-none"
                 />
               </div>
               {/* 비율 — 가장 크게 */}
