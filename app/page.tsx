@@ -128,39 +128,15 @@ export default function Dashboard() {
       <div className="sticky top-0 z-30 bg-[#0B0F1A]/90 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/30">
         <div className="max-w-7xl mx-auto px-4 pt-4 pb-3 flex flex-col gap-3">
 
-          {/* 타이틀 + 탭 + 재정비교 + 접기 버튼 */}
+          {/* 1행: 타이틀 + 접기 버튼 */}
           <div className="flex items-center justify-between gap-2">
             <motion.h1
               initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}
-              className="text-lg md:text-2xl font-black tracking-tight leading-tight shrink-0"
+              className="text-lg md:text-2xl font-black tracking-tight leading-tight"
             >
               계양구 인구현황
-              <span className="text-blue-400"> 2010–2025</span>
+              <span className="text-blue-400 hidden sm:inline"> 2010–2025</span>
             </motion.h1>
-
-            {/* 탭 메뉴 */}
-            <div className="flex items-center gap-1 flex-1 justify-center">
-              <button
-                onClick={() => setActiveTab('population')}
-                className={`px-3 md:px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all border ${
-                  activeTab === 'population'
-                    ? 'bg-blue-500/25 border-blue-400/60 text-blue-300 shadow-md shadow-blue-500/20'
-                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
-                }`}
-              >
-                📈 인구현황
-              </button>
-              <button
-                onClick={() => setActiveTab('dongCompare')}
-                className={`px-3 md:px-5 py-2 rounded-xl text-xs md:text-sm font-bold transition-all border ${
-                  activeTab === 'dongCompare'
-                    ? 'bg-indigo-500/25 border-indigo-400/60 text-indigo-300 shadow-md shadow-indigo-500/20'
-                    : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
-                }`}
-              >
-                🏘 동별 비교
-              </button>
-            </div>
 
             <div className="flex items-center gap-1.5 shrink-0">
               <a href="/finance" className="hidden md:flex px-4 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-sm text-emerald-400 hover:bg-emerald-500/30 hover:border-emerald-400 transition-all font-bold items-center gap-1.5">
@@ -168,15 +144,12 @@ export default function Dashboard() {
               </a>
               {/* 헤더 접기/펼치기 버튼 — 접혀있는 동안 항상 강조 */}
               <div className="relative">
-                {headerCollapsed && (
-                  <span className="absolute inset-0 rounded-xl bg-blue-400/40 animate-ping pointer-events-none" />
-                )}
                 <button
                   onClick={() => setHeaderCollapsed((v) => !v)}
                   title={headerCollapsed ? '헤더 펼치기' : '헤더 접기'}
                   className={`relative flex items-center gap-1 px-2.5 py-2 rounded-xl border transition-all text-xs font-bold ${
                     headerCollapsed
-                      ? 'bg-blue-500/30 border-blue-400/70 text-blue-300 shadow-lg shadow-blue-500/30'
+                      ? 'bg-blue-500/15 border-blue-400/40 text-blue-400 animate-pulse'
                       : 'bg-white/5 border-white/15 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/30'
                   }`}
                 >
@@ -192,6 +165,36 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* 2행: 탭 메뉴 (모바일 전체 너비) */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setActiveTab('population')}
+              className={`flex-1 py-2 rounded-xl text-xs md:text-sm font-bold transition-all border ${
+                activeTab === 'population'
+                  ? 'bg-blue-500/25 border-blue-400/60 text-blue-300 shadow-md shadow-blue-500/20'
+                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
+              }`}
+            >
+              📈 인구현황
+            </button>
+            <button
+              onClick={() => setActiveTab('dongCompare')}
+              className={`flex-1 py-2 rounded-xl text-xs md:text-sm font-bold transition-all border ${
+                activeTab === 'dongCompare'
+                  ? 'bg-indigo-500/25 border-indigo-400/60 text-indigo-300 shadow-md shadow-indigo-500/20'
+                  : 'bg-white/5 border-white/10 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/20'
+              }`}
+            >
+              🏘 동별 비교
+            </button>
+            <a
+              href="/finance"
+              className="md:hidden flex-1 py-2 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-xs text-emerald-400 font-bold text-center transition-all hover:bg-emerald-500/30"
+            >
+              💰 재정비교
+            </a>
           </div>
 
           {/* 접혔을 때 표시할 현재 상태 요약 바 */}

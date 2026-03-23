@@ -190,15 +190,12 @@ export default function FinancePage() {
               </Link>
               {/* 헤더 접기/펼치기 — 접혀있는 동안 항상 강조 */}
               <div className="relative">
-                {headerCollapsed && (
-                  <span className="absolute inset-0 rounded-xl bg-emerald-400/40 animate-ping pointer-events-none" />
-                )}
                 <button
                   onClick={() => setHeaderCollapsed(v => !v)}
                   title={headerCollapsed ? '헤더 펼치기' : '헤더 접기'}
                   className={`relative flex items-center gap-1 px-2.5 py-2 rounded-xl border transition-all text-xs font-bold ${
                     headerCollapsed
-                      ? 'bg-emerald-500/30 border-emerald-400/70 text-emerald-300 shadow-lg shadow-emerald-500/30'
+                      ? 'bg-emerald-500/15 border-emerald-400/40 text-emerald-400 animate-pulse'
                       : 'bg-white/5 border-white/15 text-white/50 hover:bg-white/10 hover:text-white/80 hover:border-white/30'
                   }`}
                 >
