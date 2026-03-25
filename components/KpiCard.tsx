@@ -40,15 +40,15 @@ export default function KpiCard({
           value={value}
           decimals={decimals}
           suffix={unit}
-          className="text-2xl md:text-3xl font-bold tabular-nums whitespace-nowrap"
+          className="text-3xl md:text-4xl font-black tabular-nums whitespace-nowrap"
           duration={0.75}
         />
       </div>
       {/* diff 행 — 고정 높이로 레이아웃 안정화 */}
-      <div className="h-5 flex items-center gap-1 text-xs font-semibold overflow-hidden">
+      <div className="h-6 flex items-center gap-1.5 text-sm font-bold overflow-hidden">
         {diff !== undefined && (
           <>
-            <span className={isPositive ? 'text-emerald-400' : 'text-rose-400'}>
+            <span className={`text-base ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
               {isPositive ? '▲' : '▼'}
             </span>
             <AnimatedNumber
@@ -58,7 +58,7 @@ export default function KpiCard({
               duration={0.75}
               className={`tabular-nums whitespace-nowrap ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}
             />
-            <span className="text-white/40 font-normal ml-0.5 whitespace-nowrap">{diffLabel}</span>
+            <span className="text-white/35 font-normal ml-0.5 whitespace-nowrap text-xs">{diffLabel}</span>
           </>
         )}
       </div>

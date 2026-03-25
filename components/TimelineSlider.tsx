@@ -62,9 +62,20 @@ export default function TimelineSlider({ activeYear, isPlaying, onYearChange, on
           </div>
         </div>
 
-        <span className="text-2xl font-black text-white w-16 text-right tabular-nums">
+        <motion.span
+          key={activeYear}
+          initial={{ scale: 1.25, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.2 }}
+          className="text-4xl font-black tabular-nums text-right"
+          style={{
+            color: '#54A0FF',
+            textShadow: '0 0 20px rgba(84,160,255,0.75), 0 0 40px rgba(84,160,255,0.35)',
+            minWidth: '5.5rem',
+          }}
+        >
           {activeYear}
-        </span>
+        </motion.span>
       </div>
 
       {/* 연도 레이블 */}

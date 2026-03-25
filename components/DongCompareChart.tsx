@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ComposedChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip,
+  XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine,
   ResponsiveContainer,
 } from 'recharts';
 import { ALL_REGION_DATA, REGIONS, getYouthPop, getElderlyPop } from '@/lib/allRegions';
@@ -49,6 +49,20 @@ const METRICS = [
     suffix: '세',
   },
 ];
+
+function EndDot({ cx, cy, index, data, dataKey, color, fmt }: any) {
+  if (index !== data.length - 1) return null;
+  const value = data[index]?.[dataKey];
+  if (value == null) return null;
+  return (
+    <g>
+      <circle cx={cx} cy={cy} r={5} fill={color} stroke="#0B0F1A" strokeWidth={2} />
+      <text x={cx + 9} y={cy + 4} fill={color} fontSize={11} fontWeight="bold" style={{ textShadow: '0 0 6px #0B0F1A' }}>
+        {fmt(value)}
+      </text>
+    </g>
+  );
+}
 
 function CustomTooltip({ active, payload, label, unit }: any) {
   if (!active || !payload?.length) return null;
@@ -166,38 +180,39 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                     initial={{ opacity: 0, y: 16 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.07 }}
-                    className="rounded-xl px-3 py-2.5 border flex flex-row items-center gap-3"
+                    className="rounded-xl px-4 py-3 border-2 flex flex-row items-center gap-4"
                     style={{
-                      background: `${color}0d`,
-                      borderColor: `${color}33`,
+                      background: `linear-gradient(135deg, ${color}1a 0%, ${color}08 100%)`,
+                      borderColor: `${color}55`,
+                      boxShadow: `0 0 24px ${color}1a`,
                     }}
                   >
                     {/* 왼쪽: 동 이름 */}
-                    <div className="flex flex-col gap-0.5 shrink-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-                        <span className="text-[11px] font-bold" style={{ color }}>{label}</span>
+                    <div className="flex flex-col gap-1 shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color, boxShadow: `0 0 8px ${color}` }} />
+                        <span className="text-sm font-black" style={{ color }}>{label}</span>
                       </div>
-                      <span className="text-[9px] text-white/25 pl-3.5">{activeYear}년</span>
+                      <span className="text-[10px] text-white/30 pl-4">{activeYear}년</span>
                     </div>
 
                     {/* 구분선 */}
-                    <div className="w-px self-stretch bg-white/10 shrink-0" />
+                    <div className="w-px self-stretch shrink-0" style={{ background: `${color}33` }} />
 
                     {/* 오른쪽: 수치 */}
-                    <div className="flex flex-col gap-0.5 min-w-0">
+                    <div className="flex flex-col gap-1 min-w-0">
                       <AnimatedNumber
                         value={total}
                         suffix="명"
                         duration={0.8}
-                        className="text-base md:text-lg font-black text-white tabular-nums leading-none"
+                        className="text-2xl md:text-3xl font-black text-white tabular-nums leading-none"
                       />
                       {diff !== 0 && (
-                        <div className={`flex items-center gap-0.5 text-[10px] font-semibold ${isDown ? 'text-rose-400' : 'text-emerald-400'}`}>
-                          <span>{isDown ? '▼' : '▲'}</span>
+                        <div className={`flex items-center gap-1.5 text-sm font-bold ${isDown ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          <span className="text-base">{isDown ? '▼' : '▲'}</span>
                           <AnimatedNumber value={Math.abs(diff)} suffix="명" duration={0.8} />
-                          <span className="text-white/30 font-normal">
-                            ({isDown ? '−' : '+'}<AnimatedNumber value={Math.abs(rate)} decimals={1} suffix="%" duration={0.8} />)
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-black ${isDown ? 'bg-rose-500/25 text-rose-300' : 'bg-emerald-500/25 text-emerald-300'}`}>
+                            {isDown ? '−' : '+'}<AnimatedNumber value={Math.abs(rate)} decimals={1} suffix="%" duration={0.8} />
                           </span>
                         </div>
                       )}
@@ -216,15 +231,25 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 + mi * 0.08 }}
-                className="bg-black/20 rounded-2xl p-4"
+                className="bg-black/20 rounded-2xl p-4 relative overflow-hidden"
               >
+                {/* 배경 연도 워터마크 */}
+                {activeYear && (
+                  <div
+                    className="absolute bottom-8 right-3 font-black tabular-nums pointer-events-none select-none"
+                    style={{ fontSize: '72px', color: 'rgba(255,255,255,0.035)', lineHeight: 1 }}
+                  >
+                    {activeYear}
+                  </div>
+                )}
+
                 <p className="text-xs font-semibold text-white/60 mb-3">{m.label} ({m.unit})</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <ComposedChart data={chartData} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
+                <ResponsiveContainer width="100%" height={280}>
+                  <ComposedChart data={chartData} margin={{ top: 12, right: 60, left: 0, bottom: 0 }}>
                     <defs>
                       {selectedDongs.map((_, i) => (
                         <linearGradient key={i} id={`grad_${m.key}_${i}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor={DONG_COLORS[i]} stopOpacity={0.3} />
+                          <stop offset="5%"  stopColor={DONG_COLORS[i]} stopOpacity={0.35} />
                           <stop offset="95%" stopColor={DONG_COLORS[i]} stopOpacity={0} />
                         </linearGradient>
                       ))}
@@ -232,15 +257,33 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                     <XAxis
                       dataKey="year"
-                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
                       axisLine={false} tickLine={false}
                     />
                     <YAxis
-                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 9 }}
-                      axisLine={false} tickLine={false} width={42}
+                      tick={{ fill: 'rgba(255,255,255,0.35)', fontSize: 10 }}
+                      axisLine={false} tickLine={false} width={46}
                       tickFormatter={m.fmt}
+                      domain={[(dataMin: number) => Math.floor(dataMin * 0.96), (dataMax: number) => Math.ceil(dataMax * 1.02)]}
                     />
                     <Tooltip content={<CustomTooltip unit={m.unit} />} />
+
+                    {/* 현재 연도 기준선 */}
+                    {activeYear && visibleYears.includes(activeYear) && visibleYears.length < YEARS.length && (
+                      <ReferenceLine
+                        x={activeYear}
+                        stroke="rgba(255,255,255,0.45)"
+                        strokeWidth={1.5}
+                        strokeDasharray="5 3"
+                        label={{
+                          value: `${activeYear}년`,
+                          position: 'insideTopLeft',
+                          fill: 'rgba(255,255,255,0.7)',
+                          fontSize: 11,
+                          fontWeight: 'bold',
+                        }}
+                      />
+                    )}
 
                     {/* 동별 Area — activeYear까지만 데이터가 쌓이는 구조 */}
                     {dongLabels.map((label, i) => (
@@ -252,7 +295,15 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                         stroke={DONG_COLORS[i]}
                         strokeWidth={2.5}
                         fill={`url(#grad_${m.key}_${i})`}
-                        dot={{ r: 2.5, fill: DONG_COLORS[i], strokeWidth: 0 }}
+                        dot={(props: any) => (
+                          <EndDot
+                            {...props}
+                            data={chartData}
+                            dataKey={`${label}_${m.key}`}
+                            color={DONG_COLORS[i]}
+                            fmt={m.fmt}
+                          />
+                        )}
                         activeDot={{ r: 6, fill: '#fff', stroke: DONG_COLORS[i], strokeWidth: 2 }}
                         isAnimationActive
                         animationDuration={500}
@@ -260,8 +311,6 @@ export default function DongCompareChart({ selectedDongs, activeYear }: Props) {
                         connectNulls
                       />
                     ))}
-
-                    {/* 범례를 직접 렌더링 (하단) */}
                   </ComposedChart>
                 </ResponsiveContainer>
 
